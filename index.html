@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>오사카 3박4일 · 여행 노선도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #12172a;
+    --bg-soft: #171d34;
+    --surface: #1d2440;
+    --surface-alt: #232b4d;
+    --line: #323b60;
+    --cream: #f3ede0;
+    --muted: #92a0c4;
+    --amber: #e0a458;
+    --amber-dim: #4a3a26;
+    --move: #7ea6d8;
+    --food: #e0a458;
+    --sight: #8fc08a;
+    --drink: #c98cc9;
+    --shop: #5fc4bb;
+    --stay: #9aa0b8;
+    --alt-line: #4a5378;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;padding:0;background:var(--bg); color:var(--cream); font-family:'Noto Sans KR',sans-serif;}
+  body{padding-bottom:48px;}
+
+  .hero{
+    padding: 28px 20px 18px;
+    background:
+      radial-gradient(circle at 85% -10%, rgba(224,164,88,0.16), transparent 55%),
+      var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .hero .eyebrow{
+    font-size: 12px; letter-spacing: 0.18em; color: var(--amber); font-weight:700;
+    text-transform: uppercase;
+  }
+  .hero h1{
+    font-family:'Noto Serif KR', serif; font-weight:700;
+    font-size: 26px; margin: 6px 0 8px; line-height:1.3;
+  }
+  .hero p{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.6;}
+
+  .tabs{
+    position: sticky; top:0; z-index: 20;
+    display:flex; gap:0;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--line);
+    padding: 0 12px;
+  }
+  .tab{
+    flex:1; text-align:center; padding: 14px 4px 12px;
+    font-size: 13.5px; font-weight:700; color: var(--muted);
+    border-bottom: 3px solid transparent;
+    cursor:pointer; user-select:none;
+    transition: color .2s, border-color .2s;
+  }
+  .tab .d{ display:block; font-family:'Noto Serif KR',serif; font-size:17px; margin-bottom:2px; }
+  .tab.active{ color: var(--cream); border-bottom-color: var(--amber); }
+
+  .day-panel{ display:none; padding: 22px 16px 8px; }
+  .day-panel.active{ display:block; }
+
+  .day-meta{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin: 0 4px 18px;
+    color: var(--muted); font-size:12.5px;
+  }
+  .day-meta b{ color:var(--cream); font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600;}
+
+  .timeline{ position:relative; padding-left: 54px; }
+  .timeline::before{
+    content:""; position:absolute; left: 20px; top:6px; bottom: 6px; width:2px;
+    background: repeating-linear-gradient(to bottom, var(--line) 0 6px, transparent 6px 11px);
+  }
+
+  .stop{ position:relative; margin-bottom: 16px; }
+  .stop .time{
+    position:absolute; left:-54px; top:2px; width:48px; text-align:right;
+    font-size:12px; font-weight:700; color:var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .stop .dot{
+    position:absolute; left:-38px; top:3px; width:16px; height:16px; border-radius:50%;
+    background: var(--dot-color, var(--move));
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 2px var(--dot-color, var(--move));
+  }
+  .stop.alt .dot{ box-shadow: 0 0 0 2px var(--dot-color, var(--move)); opacity:.55; }
+  .stop.alt::after{
+    content:""; position:absolute; left:-46px; top:20px; bottom:-16px; width:0;
+    border-left: 2px dashed var(--alt-line);
+  }
+
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 13px 14px 12px;
+  }
+  .stop.alt .card{ background: transparent; border-style:dashed; padding: 10px 14px; }
+
+  .card-top{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:6px; }
+  .badge{
+    font-size:11px; font-weight:700; padding: 3px 9px; border-radius: 999px;
+    color: var(--bg); background: var(--dot-color, var(--move));
+    letter-spacing: .01em;
+  }
+  .tag{
+    font-size: 10.5px; font-weight:700; padding: 2px 7px; border-radius:6px;
+    border:1px solid var(--amber); color: var(--amber);
+  }
+  .tag.alt{ border-color: var(--muted); color: var(--muted); }
+
+  .name{ font-size: 15.5px; font-weight:700; color:var(--cream); margin: 2px 0 3px; line-height:1.4;}
+  .stop.alt .name{ font-size:14px; font-weight:500; color: var(--muted); }
+  .addr{ font-size:12.5px; color: var(--muted); margin-bottom:4px; }
+  .memo{ font-size:12.5px; color:#c7cde4; line-height:1.55; margin: 4px 0 10px; }
+
+  .links{ display:flex; gap:6px; flex-wrap:wrap; }
+  .lnk{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:11.5px; font-weight:700; color: var(--cream);
+    background: var(--surface-alt); border:1px solid var(--line);
+    padding: 6px 10px; border-radius: 8px; text-decoration:none;
+  }
+  .lnk svg{ width:12px; height:12px; }
+  .lnk.primary{ background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+
+  .legend{
+    display:flex; flex-wrap:wrap; gap: 10px 14px; margin: 4px 4px 20px;
+    font-size:11px; color:var(--muted);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .legend i{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+
+  footer{ text-align:center; color: var(--muted); font-size:11.5px; padding: 20px 20px 4px; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="eyebrow">OSAKA · 11.13 &ndash; 11.15</div>
+  <h1>오사카 3박4일 여행 노선도</h1>
+  <p>고등학교 친구 5인, 난바 · 신사이바시 숙소 기준. 날짜별로 탭을 눌러 확인하세요.</p>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div id="panels"></div>
+
+<footer>지도 보기 · 길찾기 버튼은 구글맵으로 연결됩니다</footer>
+
+<script>
+const DATA = [{"day": "Day1 · 11/13(금)", "time": "08:00", "type": "이동", "priority": "-", "name": "김포 출발", "addr": "김포국제공항", "memo": "간사이행 출발", "map": "https://www.google.com/maps/search/?api=1&query=%EA%B9%80%ED%8F%AC%EA%B5%AD%EC%A0%9C%EA%B3%B5%ED%95%AD", "dir": "https://www.google.com/maps/dir/?api=1&destination=%EA%B9%80%ED%8F%AC%EA%B5%AD%EC%A0%9C%EA%B3%B5%ED%95%AD", "home": "https://www.airport.co.kr/gimpo/main.do"}, {"day": "Day1 · 11/13(금)", "time": "09:40", "type": "이동", "priority": "-", "name": "간사이공항 도착", "addr": "간사이국제공항", "memo": "입국심사·수하물 수령까지 약 1시간 소요", "map": "https://www.google.com/maps/search/?api=1&query=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "home": "https://www.kansai-airport.or.jp/"}, {"day": "Day1 · 11/13(금)", "time": "11:00", "type": "이동", "priority": "-", "name": "라피트 특급 탑승", "addr": "간사이공항역", "memo": "간사이공항 → 난바역 직행, 환승없음·약 40분", "map": "https://www.google.com/maps/search/?api=1&query=%E9%96%A2%E8%A5%BF%E7%A9%BA%E6%B8%AF%E9%A7%85%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%96%A2%E8%A5%BF%E7%A9%BA%E6%B8%AF%E9%A7%85%20%E5%A4%A7%E9%98%AA", "home": "https://www.kansai-airport.or.jp/"}, {"day": "Day1 · 11/13(금)", "time": "12:00", "type": "식사(점심)", "priority": "대표", "name": "다이와즈시 (だいわ寿司)", "addr": "구로몬시장 내", "memo": "참치 초밥 노포. 오픈런 아니면 줄이 길어요.", "map": "https://www.google.com/maps/search/?api=1&query=%E3%81%A0%E3%81%84%E3%82%8F%E5%AF%BF%E5%8F%B8%20%E9%BB%92%E9%96%80%E5%B8%82%E5%A0%B4%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E3%81%A0%E3%81%84%E3%82%8F%E5%AF%BF%E5%8F%B8%20%E9%BB%92%E9%96%80%E5%B8%82%E5%A0%B4%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day1 · 11/13(금)", "time": "12:00", "type": "식사(점심)", "priority": "대안", "name": "마구로야 쿠로긴 + 18번 타코야키", "addr": "구로몬시장 내", "memo": "참치덮밥 한 곳, 타코야키 한 곳 — 나눠 먹기 좋음", "map": "https://www.google.com/maps/search/?api=1&query=%E9%BB%92%E9%96%80%E5%B8%82%E5%A0%B4%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%BB%92%E9%96%80%E5%B8%82%E5%A0%B4%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day1 · 11/13(금)", "time": "14:00", "type": "관광", "priority": "-", "name": "도톤보리 · 신사이바시 산책", "addr": "도톤보리", "memo": "글리코상, 에비스바시, 상점가 쇼핑", "map": "https://www.google.com/maps/search/?api=1&query=%E9%81%93%E9%A0%93%E5%A0%80%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%81%93%E9%A0%93%E5%A0%80%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day1 · 11/13(금)", "time": "18:00", "type": "식사(저녁)", "priority": "대표", "name": "치보 도톤보리 본점 (千房)", "addr": "오사카시 주오구 도톤보리 1-5-5 도톤보리빌딩 1~6F · 난바역 도보 7분", "memo": "1973년 창업, 오코노미야키 명가. 영업 11:00~23:00. 6인 단체석 예약 추천.", "map": "https://www.google.com/maps/search/?api=1&query=%E5%8D%83%E6%88%BF%20%E9%81%93%E9%A0%93%E5%A0%80%E6%9C%AC%E5%BA%97%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E5%8D%83%E6%88%BF%20%E9%81%93%E9%A0%93%E5%A0%80%E6%9C%AC%E5%BA%97%20%E5%A4%A7%E9%98%AA", "home": "https://shop.chibo.com/detail/28/"}, {"day": "Day1 · 11/13(금)", "time": "20:00", "type": "술집(1차)", "priority": "대표", "name": "토리키조쿠 도톤보리나카자점", "addr": "도톤보리", "memo": "가성비 야키토리 체인, 단체석 여유. 19~21시 웨이팅 가능.", "map": "https://www.google.com/maps/search/?api=1&query=%E9%B3%A5%E8%B2%B4%E6%97%8F%20%E9%81%93%E9%A0%93%E5%A0%80%E4%B8%AD%E5%BA%A7%E5%BA%97%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%B3%A5%E8%B2%B4%E6%97%8F%20%E9%81%93%E9%A0%93%E5%A0%80%E4%B8%AD%E5%BA%A7%E5%BA%97%20%E5%A4%A7%E9%98%AA", "home": "https://torikizoku.co.jp/"}, {"day": "Day2 · 11/14(토)", "time": "08:00", "type": "식사(아침)", "priority": "-", "name": "숙소 근처 아침", "addr": "난바/신사이바시 숙소 인근", "memo": "카페 또는 편의점에서 가볍게", "map": "https://www.google.com/maps/search/?api=1&query=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day2 · 11/14(토)", "time": "09:30", "type": "관광", "priority": "-", "name": "오사카성 공원", "addr": "오사카시 주오구 오사카조", "memo": "천수각까지 둘러보기, 오사카 대표 랜드마크", "map": "https://www.google.com/maps/search/?api=1&query=%E5%A4%A7%E9%98%AA%E5%9F%8E%E5%85%AC%E5%9C%92", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E5%A4%A7%E9%98%AA%E5%9F%8E%E5%85%AC%E5%9C%92", "home": "https://www.osakacastle.net/"}, {"day": "Day2 · 11/14(토)", "time": "12:00", "type": "이동", "priority": "-", "name": "신세카이로 이동", "addr": "전철 이용", "memo": "약 20~30분 소요", "map": "https://www.google.com/maps/search/?api=1&query=%E6%96%B0%E4%B8%96%E7%95%8C%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E6%96%B0%E4%B8%96%E7%95%8C%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day2 · 11/14(토)", "time": "12:30", "type": "식사(점심)", "priority": "대표", "name": "쿠시카츠 다루마 신세카이 총본점", "addr": "오사카시 나니와구 에비스히가시 1-6-8", "memo": "1929년 창업, 원조 쿠시카츠. '소스 2번 찍기 금지' 룰. 웨이팅 있으면 인근 잔잔점 대안.", "map": "https://www.google.com/maps/search/?api=1&query=%E4%B8%B2%E3%81%8B%E3%81%A4%E3%81%A0%E3%82%8B%E3%81%BE%20%E6%96%B0%E4%B8%96%E7%95%8C%E7%B7%8F%E6%9C%AC%E5%BA%97%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E4%B8%B2%E3%81%8B%E3%81%A4%E3%81%A0%E3%82%8B%E3%81%BE%20%E6%96%B0%E4%B8%96%E7%95%8C%E7%B7%8F%E6%9C%AC%E5%BA%97%20%E5%A4%A7%E9%98%AA", "home": "https://www.kushikatu-daruma.com/"}, {"day": "Day2 · 11/14(토)", "time": "14:00", "type": "관광", "priority": "-", "name": "츠텐카쿠 & 신세카이 거리", "addr": "나니와구 신세카이", "memo": "레트로 분위기, 사진 스팟 많음", "map": "https://www.google.com/maps/search/?api=1&query=%E9%80%9A%E5%A4%A9%E9%96%A3%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%80%9A%E5%A4%A9%E9%96%A3%20%E5%A4%A7%E9%98%AA", "home": "https://www.tsutenkaku.co.jp/"}, {"day": "Day2 · 11/14(토)", "time": "16:00", "type": "숙소", "priority": "-", "name": "숙소 복귀 & 휴식", "addr": "난바/신사이바시 숙소", "memo": "", "map": "https://www.google.com/maps/search/?api=1&query=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day2 · 11/14(토)", "time": "18:30", "type": "식사(저녁)", "priority": "대표", "name": "야키니쿠엔 닌구 히가시신사이바시점", "addr": "오사카시 주오구 히가시신사이바시 1-7-10 APA호텔 1F", "memo": "숯불 야키니쿠, 우설이 시그니처. 술 메뉴 다양.", "map": "https://www.google.com/maps/search/?api=1&query=%E7%84%BC%E8%82%89%E8%8B%91%E3%81%AB%E3%82%93%E3%81%90%20%E6%9D%B1%E5%BF%83%E6%96%8E%E6%A9%8B%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E7%84%BC%E8%82%89%E8%8B%91%E3%81%AB%E3%82%93%E3%81%90%20%E6%9D%B1%E5%BF%83%E6%96%8E%E6%A9%8B%20%E5%A4%A7%E9%98%AA", "home": "https://yakinikuenningu.owst.jp/"}, {"day": "Day2 · 11/14(토)", "time": "20:30", "type": "술집(2차)", "priority": "대표", "name": "365사카바", "addr": "난바", "memo": "생맥주 200엔대, 현지인 단골 이자카야. 인당 1.5만원 선.", "map": "https://www.google.com/maps/search/?api=1&query=365%E9%85%92%E5%A0%B4%20%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=365%E9%85%92%E5%A0%B4%20%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day2 · 11/14(토)", "time": "20:30", "type": "술집(3차)", "priority": "대안", "name": "우라난바 스탠딩바 골목", "addr": "우라난바", "memo": "도톤보리에서 도보 이동 가능, 감성 있게 마무리", "map": "https://www.google.com/maps/search/?api=1&query=%E8%A3%8F%E3%81%AA%E3%82%93%E3%81%B0%20%E7%AB%8B%E3%81%A1%E9%A3%B2%E3%81%BF%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E8%A3%8F%E3%81%AA%E3%82%93%E3%81%B0%20%E7%AB%8B%E3%81%A1%E9%A3%B2%E3%81%BF%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day3 · 11/15(일)", "time": "08:30", "type": "식사(아침)", "priority": "-", "name": "숙소 근처 아침", "addr": "난바/신사이바시 숙소 인근", "memo": "가볍게", "map": "https://www.google.com/maps/search/?api=1&query=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day3 · 11/15(일)", "time": "09:30", "type": "쇼핑", "priority": "-", "name": "마지막 쇼핑", "addr": "구로몬시장 또는 신사이바시 상점가", "memo": "", "map": "https://www.google.com/maps/search/?api=1&query=%E5%BF%83%E6%96%8E%E6%A9%8B%E7%AD%8B%E5%95%86%E5%BA%97%E8%A1%97%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E5%BF%83%E6%96%8E%E6%A9%8B%E7%AD%8B%E5%95%86%E5%BA%97%E8%A1%97%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day3 · 11/15(일)", "time": "11:30", "type": "숙소", "priority": "-", "name": "숙소 체크아웃", "addr": "난바/신사이바시 숙소", "memo": "", "map": "https://www.google.com/maps/search/?api=1&query=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day3 · 11/15(일)", "time": "12:00", "type": "식사(점심)", "priority": "대표", "name": "킨류라멘 도톤보리점", "addr": "도톤보리", "memo": "돈코츠 베이스, 토핑(마늘·부추·김치) 무제한. 빠르게 든든히.", "map": "https://www.google.com/maps/search/?api=1&query=%E9%87%91%E9%BE%8D%E3%83%A9%E3%83%BC%E3%83%A1%E3%83%B3%20%E9%81%93%E9%A0%93%E5%A0%80%E5%BA%97%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%87%91%E9%BE%8D%E3%83%A9%E3%83%BC%E3%83%A1%E3%83%B3%20%E9%81%93%E9%A0%93%E5%A0%80%E5%BA%97%20%E5%A4%A7%E9%98%AA", "home": "https://kinryuramen.com/"}, {"day": "Day3 · 11/15(일)", "time": "13:00", "type": "이동", "priority": "-", "name": "라피트 특급 탑승", "addr": "난바역", "memo": "난바역 → 간사이공항, 환승없음·약 40분", "map": "https://www.google.com/maps/search/?api=1&query=%E9%9B%A3%E6%B3%A2%E9%A7%85%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%9B%A3%E6%B3%A2%E9%A7%85%20%E5%A4%A7%E9%98%AA", "home": ""}, {"day": "Day3 · 11/15(일)", "time": "13:45", "type": "이동", "priority": "-", "name": "공항 수속", "addr": "간사이국제공항", "memo": "", "map": "https://www.google.com/maps/search/?api=1&query=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "home": "https://www.kansai-airport.or.jp/"}, {"day": "Day3 · 11/15(일)", "time": "16:00", "type": "이동", "priority": "-", "name": "오사카 출발", "addr": "간사이국제공항", "memo": "김포행", "map": "https://www.google.com/maps/search/?api=1&query=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "home": ""}];
+
+const CATS = {
+  "이동":  { color: "var(--move)",  label:"이동" },
+  "식사":  { color: "var(--food)",  label:"식사" },
+  "관광":  { color: "var(--sight)", label:"관광" },
+  "술집":  { color: "var(--drink)", label:"술집" },
+  "쇼핑":  { color: "var(--shop)",  label:"쇼핑" },
+  "숙소":  { color: "var(--stay)",  label:"숙소" },
+};
+
+function catKey(type){
+  for(const k of Object.keys(CATS)){ if(type.startsWith(k)) return k; }
+  return "이동";
+}
+
+const ICONS = {
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13"/><path d="M15 7v13"/></svg>',
+  dir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>',
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
+};
+
+const days = [...new Set(DATA.map(d => d.day))];
+
+const tabsEl = document.getElementById('tabs');
+const panelsEl = document.getElementById('panels');
+
+days.forEach((day, i) => {
+  const [label, date] = day.split(' · ');
+  const tab = document.createElement('div');
+  tab.className = 'tab' + (i===0 ? ' active' : '');
+  tab.dataset.idx = i;
+  tab.innerHTML = `<span class="d">${label}</span>${date}`;
+  tab.onclick = () => selectDay(i);
+  tabsEl.appendChild(tab);
+
+  const items = DATA.filter(d => d.day === day);
+  const panel = document.createElement('div');
+  panel.className = 'day-panel' + (i===0 ? ' active' : '');
+  panel.dataset.idx = i;
+
+  const meta = document.createElement('div');
+  meta.className = 'day-meta';
+  meta.innerHTML = `<b>${date}</b><span>일정 ${items.length}건</span>`;
+  panel.appendChild(meta);
+
+  const tl = document.createElement('div');
+  tl.className = 'timeline';
+
+  items.forEach(item => {
+    const key = catKey(item.type);
+    const cat = CATS[key];
+    const isAlt = item.priority === '대안';
+    const stop = document.createElement('div');
+    stop.className = 'stop' + (isAlt ? ' alt' : '');
+    stop.style.setProperty('--dot-color', cat.color);
+
+    let tagHtml = '';
+    if(item.priority === '대표') tagHtml = '<span class="tag">대표</span>';
+    else if(item.priority === '대안') tagHtml = '<span class="tag alt">대안</span>';
+
+    let linksHtml = `<a class="lnk primary" href="${item.map}" target="_blank" rel="noopener">${ICONS.map}지도</a>`;
+    linksHtml += `<a class="lnk" href="${item.dir}" target="_blank" rel="noopener">${ICONS.dir}길찾기</a>`;
+    if(item.home){ linksHtml += `<a class="lnk" href="${item.home}" target="_blank" rel="noopener">${ICONS.home}홈페이지</a>`; }
+
+    stop.innerHTML = `
+      <div class="time">${item.time}</div>
+      <div class="dot"></div>
+      <div class="card">
+        <div class="card-top">
+          <span class="badge">${item.type}</span>
+          ${tagHtml}
+        </div>
+        <div class="name">${item.name}</div>
+        <div class="addr">${item.addr}</div>
+        ${item.memo ? `<div class="memo">${item.memo}</div>` : ''}
+        <div class="links">${linksHtml}</div>
+      </div>
+    `;
+    tl.appendChild(stop);
+  });
+
+  panel.appendChild(tl);
+
+  const legend = document.createElement('div');
+  legend.className = 'legend';
+  legend.innerHTML = Object.values(CATS).map(c =>
+    `<span><i style="background:${c.color}"></i>${c.label}</span>`
+  ).join('');
+  panel.appendChild(legend);
+
+  panelsEl.appendChild(panel);
+});
+
+function selectDay(i){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', +t.dataset.idx === i));
+  document.querySelectorAll('.day-panel').forEach(p => p.classList.toggle('active', +p.dataset.idx === i));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+</script>
+</body>
+</html>
