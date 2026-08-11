@@ -2,8 +2,19 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>오사카 3박4일 · 여행 노선도</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="오사카 여행">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -31,7 +42,7 @@
   body{padding-bottom:48px;}
 
   .hero{
-    padding: 28px 20px 18px;
+    padding: calc(28px + env(safe-area-inset-top)) 20px 18px;
     background:
       radial-gradient(circle at 85% -10%, rgba(224,164,88,0.16), transparent 55%),
       var(--bg);
@@ -74,27 +85,38 @@
   }
   .day-meta b{ color:var(--cream); font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600;}
 
-  .timeline{ position:relative; padding-left: 54px; }
+  .timeline{ position:relative; padding-left: 68px; }
   .timeline::before{
-    content:""; position:absolute; left: 20px; top:6px; bottom: 6px; width:2px;
+    content:""; position:absolute; left: 46px; top:6px; bottom: 6px; width:2px;
     background: repeating-linear-gradient(to bottom, var(--line) 0 6px, transparent 6px 11px);
   }
 
   .stop{ position:relative; margin-bottom: 16px; }
   .stop .time{
-    position:absolute; left:-54px; top:2px; width:48px; text-align:right;
-    font-size:12px; font-weight:700; color:var(--muted); font-variant-numeric: tabular-nums;
+    position:absolute; left:-68px; top:6px; width:32px; text-align:right;
+    font-size:12.5px; font-weight:800; color:var(--cream); font-variant-numeric: tabular-nums;
+    line-height:1.15;
   }
   .stop .dot{
-    position:absolute; left:-38px; top:3px; width:16px; height:16px; border-radius:50%;
+    position:absolute; left:-29px; top:7px; width:14px; height:14px; border-radius:50%;
     background: var(--dot-color, var(--move));
     border: 3px solid var(--bg);
     box-shadow: 0 0 0 2px var(--dot-color, var(--move));
+    z-index:2;
   }
   .stop.alt .dot{ box-shadow: 0 0 0 2px var(--dot-color, var(--move)); opacity:.55; }
   .stop.alt::after{
-    content:""; position:absolute; left:-46px; top:20px; bottom:-16px; width:0;
+    content:""; position:absolute; left:-37px; top:24px; bottom:-16px; width:0;
     border-left: 2px dashed var(--alt-line);
+  }
+
+  .gap{ position:relative; height: 24px; margin: -6px 0 -2px; }
+  .gap .glabel{
+    position:absolute; left:-22px; top:50%; transform:translate(-50%,-50%);
+    background: var(--bg); color: var(--muted);
+    font-size:10.5px; font-weight:700; white-space:nowrap;
+    padding: 3px 9px; border-radius:999px; border:1px solid var(--line);
+    z-index:1;
   }
 
   .card{
@@ -172,6 +194,21 @@ function catKey(type){
   return "이동";
 }
 
+function minutesBetween(t1, t2){
+  const [h1,m1] = t1.split(':').map(Number);
+  const [h2,m2] = t2.split(':').map(Number);
+  if([h1,m1,h2,m2].some(isNaN)) return null;
+  return (h2*60+m2) - (h1*60+m1);
+}
+
+function formatMins(mins){
+  const h = Math.floor(mins/60);
+  const m = mins % 60;
+  if(h > 0 && m > 0) return `${h}시간 ${m}분 후`;
+  if(h > 0) return `${h}시간 후`;
+  return `${m}분 후`;
+}
+
 const ICONS = {
   map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13"/><path d="M15 7v13"/></svg>',
   dir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>',
@@ -205,7 +242,16 @@ days.forEach((day, i) => {
   const tl = document.createElement('div');
   tl.className = 'timeline';
 
-  items.forEach(item => {
+  items.forEach((item, idx) => {
+    if(idx > 0){
+      const mins = minutesBetween(items[idx-1].time, item.time);
+      if(mins !== null && mins > 0){
+        const gap = document.createElement('div');
+        gap.className = 'gap';
+        gap.innerHTML = `<span class="glabel">${formatMins(mins)}</span>`;
+        tl.appendChild(gap);
+      }
+    }
     const key = catKey(item.type);
     const cat = CATS[key];
     const isAlt = item.priority === '대안';
@@ -254,6 +300,12 @@ function selectDay(i){
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', +t.dataset.idx === i));
   document.querySelectorAll('.day-panel').forEach(p => p.classList.toggle('active', +p.dataset.idx === i));
   window.scrollTo({top:0, behavior:'smooth'});
+}
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
 }
 </script>
 </body>
