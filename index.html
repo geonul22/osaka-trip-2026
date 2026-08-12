@@ -84,6 +84,7 @@
     color: var(--muted); font-size:12.5px;
   }
   .day-meta b{ color:var(--cream); font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600;}
+  .day-meta .day-total{ color: var(--amber); font-weight:700; }
 
   .timeline{ position:relative; padding-left: 68px; }
   .timeline::before{
@@ -303,7 +304,10 @@ days.forEach((day, i) => {
 
   const meta = document.createElement('div');
   meta.className = 'day-meta';
-  meta.innerHTML = `<b>${date}</b><span>일정 ${items.length}건</span>`;
+  const dayTotal = items
+    .filter(it => it.priority !== '대안' && typeof it.price === 'number')
+    .reduce((s, it) => s + it.price, 0);
+  meta.innerHTML = `<b>${date}</b><span>일정 ${items.length}건 · 1인 예상 <span class="day-total">¥${dayTotal.toLocaleString()}</span></span>`;
   panel.appendChild(meta);
 
   const tl = document.createElement('div');
