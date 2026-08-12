@@ -1,4 +1,4 @@
-const CACHE = 'osaka-trip-v1';
+const CACHE = 'osaka-trip-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -26,17 +26,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const fetchPromise = fetch(event.request)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const clone = res.clone();
-            caches.open(CACHE).then((cache) => cache.put(event.request, clone));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
+    fetch(event.request)
+      .then((res) => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then((cache) => cache.put(event.request, clone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
