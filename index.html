@@ -198,6 +198,43 @@
   .bn-title{ font-size:12.5px; font-weight:800; color:var(--amber); margin-bottom:8px; }
   .bn-item{ font-size:12.5px; color:#c7cde4; line-height:1.7; padding-left:14px; position:relative; }
   .bn-item::before{ content:"·"; position:absolute; left:2px; color:var(--muted); }
+
+  .dday-badge{
+    font-size:11.5px; font-weight:800; padding: 4px 10px; border-radius:999px;
+    white-space:nowrap; font-variant-numeric: tabular-nums;
+  }
+  .dday-badge.urgent{ background:#5a2020; color:#ff9b9b; }
+  .dday-badge.soon{ background: var(--amber-dim); color: var(--amber); }
+  .dday-badge.normal{ background: var(--surface-alt); color: var(--muted); border:1px solid var(--line); }
+  .dday-badge.past{ background: var(--surface-alt); color: var(--muted); opacity:.6; }
+
+  .stay-card{
+    background: var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding: 13px 14px 12px; margin: 0 4px 12px;
+  }
+  .stay-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+  .stay-status{
+    font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:6px;
+    border:1px solid var(--sight); color: var(--sight);
+  }
+  .stay-status.candidate{ border-color: var(--muted); color: var(--muted); }
+  .stay-name{ font-size:15px; font-weight:700; color:var(--cream); margin:2px 0 4px; }
+  .stay-dates{ font-size:12px; color:var(--muted); margin-bottom:8px; }
+  .stay-row{ display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:#c7cde4; padding:5px 0; border-top:1px dashed var(--line); }
+  .stay-row:first-of-type{ border-top:none; }
+  .stay-note{ font-size:11.5px; color:var(--muted); margin-top:6px; line-height:1.5; }
+
+  .section-title{ font-size:12.5px; font-weight:800; color:var(--amber); margin: 18px 4px 10px; letter-spacing:.02em; }
+  .section-title:first-child{ margin-top:2px; }
+
+  .check-row{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding: 10px 12px; background: var(--surface); border:1px solid var(--line);
+    border-radius:10px; margin: 0 4px 6px;
+  }
+  .check-row.done{ opacity:.5; }
+  .check-name{ font-size:12.5px; color:var(--cream); }
+  .check-date{ display:block; font-size:10.5px; color:var(--muted); margin-top:2px; font-weight:400; }
 </style>
 </head>
 <body>
@@ -439,6 +476,81 @@ bPanel.appendChild(notesCard);
 
 panelsEl.appendChild(bPanel);
 
+
+// 숙소 & 준비 체크리스트 탭
+const stayIdx = budgetIdx + 1;
+const sTab = document.createElement('div');
+sTab.className = 'tab';
+sTab.dataset.idx = stayIdx;
+sTab.innerHTML = `<span class="d">숙소</span>D-day`;
+sTab.onclick = () => selectDay(stayIdx);
+tabsEl.appendChild(sTab);
+
+const sPanel = document.createElement('div');
+sPanel.className = 'day-panel';
+sPanel.dataset.idx = stayIdx;
+sPanel.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:30px 0;">불러오는 중…</div>`;
+panelsEl.appendChild(sPanel);
+
+function ddayInfo(targetDateStr){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(targetDateStr + 'T00:00:00');
+  const diffDays = Math.round((target - today) / 86400000);
+  let cls = 'normal', label;
+  if(diffDays < 0){ cls = 'past'; label = '마감 지남'; }
+  else if(diffDays === 0){ cls = 'urgent'; label = 'D-DAY'; }
+  else if(diffDays <= 3){ cls = 'urgent'; label = `D-${diffDays}`; }
+  else if(diffDays <= 7){ cls = 'soon'; label = `D-${diffDays}`; }
+  else { cls = 'normal'; label = `D-${diffDays}`; }
+  return { diffDays, cls, label };
+}
+
+fetch('notify-data.json').then(r => r.json()).then(data => {
+  let html = '';
+
+  html += `<div class="section-title">숙소 후보 · 예약 현황</div>`;
+  const stays = [...data.stays].sort((a,b) => new Date(a.free_cancel_deadline) - new Date(b.free_cancel_deadline));
+  stays.forEach(stay => {
+    const fc = ddayInfo(stay.free_cancel_deadline);
+    const statusClass = stay.status === '예약완료' ? '' : 'candidate';
+    html += `
+      <div class="stay-card">
+        <div class="stay-top">
+          <span class="stay-status ${statusClass}">${stay.status}</span>
+          <span class="dday-badge ${fc.cls}">무료취소 ${fc.label}</span>
+        </div>
+        <div class="stay-name">${stay.name}</div>
+        <div class="stay-dates">${stay.checkin} ~ ${stay.checkout}${stay.price_per_night_krw ? ` · 1박 ₩${stay.price_per_night_krw.toLocaleString()}` : ''}</div>
+        <div class="stay-row"><span>무료취소 마감</span><span>${stay.free_cancel_deadline}</span></div>
+        ${stay.note ? `<div class="stay-note">${stay.note}</div>` : ''}
+        ${stay.url ? `<div class="links" style="margin-top:8px;"><a class="lnk primary" href="${stay.url}" target="_blank" rel="noopener">에어비앤비 열기</a></div>` : ''}
+      </div>
+    `;
+  });
+
+  html += `<div class="section-title">여행 준비 체크리스트</div>`;
+  const tripStart = data.trip_start;
+  const items = data.checklist.map(it => {
+    const d = new Date(tripStart + 'T00:00:00');
+    d.setDate(d.getDate() - it.days_before);
+    const dateStr = d.toISOString().slice(0,10);
+    return { ...it, dateStr };
+  }).sort((a,b) => new Date(a.dateStr) - new Date(b.dateStr));
+
+  items.forEach(it => {
+    const info = ddayInfo(it.dateStr);
+    html += `
+      <div class="check-row ${info.diffDays < 0 ? 'done' : ''}">
+        <div class="check-name">${it.item}<span class="check-date">완료 권장일 ${it.dateStr}</span></div>
+        <span class="dday-badge ${info.cls}">${info.label}</span>
+      </div>
+    `;
+  });
+
+  sPanel.innerHTML = html;
+}).catch(() => {
+  sPanel.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:30px 0;">숙소 정보를 불러오지 못했어요. notify-data.json을 확인해주세요.</div>`;
+});
 
 function selectDay(i){
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', +t.dataset.idx === i));

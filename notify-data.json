@@ -1,0 +1,45 @@
+{
+  "trip_start": "2026-11-13",
+  "trip_end": "2026-11-15",
+  "notify_thresholds_days": [14, 7, 3, 1, 0],
+
+  "_숙소_작성법": "status는 '예약완료' 또는 '후보'만 사용하세요. free_cancel_deadline은 YYYY-MM-DD, 시간까지 걸린 상품이면 note에 몇 시까지인지 적어두세요.",
+  "stays": [
+    {
+      "id": "stay1",
+      "name": "예시) 난바 스테이 A",
+      "url": "https://www.airbnb.co.kr/rooms/xxxxxxx",
+      "status": "예약완료",
+      "checkin": "2026-11-13",
+      "checkout": "2026-11-15",
+      "price_per_night_krw": 0,
+      "free_cancel_deadline": "2026-10-20",
+      "note": "6인 · 난바역 도보 5분 · 실제 정보로 교체해주세요"
+    },
+    {
+      "id": "stay2",
+      "name": "예시) 신사이바시 스테이 B (후보)",
+      "url": "https://www.airbnb.co.kr/rooms/yyyyyyy",
+      "status": "후보",
+      "checkin": "2026-11-13",
+      "checkout": "2026-11-15",
+      "price_per_night_krw": 0,
+      "free_cancel_deadline": "2026-10-05",
+      "note": "무료취소 마감이 더 빠름 · 실제 정보로 교체해주세요"
+    }
+  ],
+
+  "_체크리스트_작성법": "days_before는 trip_start(11/13) 기준 며칠 전까지 완료해야 하는지입니다.",
+  "checklist": [
+    { "item": "여권 유효기간 확인 (입국일 기준 6개월 이상 권장)", "days_before": 45 },
+    { "item": "숙소 최종 확정 (후보 중 하나로 예약 마무리)", "days_before": 21 },
+    { "item": "왕복 항공권 좌석/수하물 옵션 확인", "days_before": 21 },
+    { "item": "여행자보험 가입", "days_before": 14 },
+    { "item": "포켓와이파이/유심 예약", "days_before": 10 },
+    { "item": "숙소별 무료취소 마감일 재확인 (후보 정리)", "days_before": 7 },
+    { "item": "엔화 환전", "days_before": 5 },
+    { "item": "가이드북 식당·동선 최종 점검", "days_before": 3 },
+    { "item": "짐 싸기 · 어댑터/보조배터리 챙기기", "days_before": 2 },
+    { "item": "체크인 정보(주소·비밀번호) 캡처해두기", "days_before": 1 }
+  ]
+}
