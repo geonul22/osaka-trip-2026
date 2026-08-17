@@ -520,7 +520,7 @@ fetch('notify-data.json').then(r => r.json()).then(data => {
           <span class="dday-badge ${fc.cls}">무료취소 ${fc.label}</span>
         </div>
         <div class="stay-name">${stay.name}</div>
-        <div class="stay-dates">${stay.checkin} ~ ${stay.checkout}${stay.price_per_night_krw ? ` · 1박 ₩${stay.price_per_night_krw.toLocaleString()}` : ''}</div>
+        <div class="stay-dates">${stay.checkin} ~ ${stay.checkout}${stay.price_display ? ` · ${stay.price_display}` : ''}</div>
         <div class="stay-row"><span>무료취소 마감</span><span>${stay.free_cancel_deadline}</span></div>
         ${stay.note ? `<div class="stay-note">${stay.note}</div>` : ''}
         ${stay.url ? `<div class="links" style="margin-top:8px;"><a class="lnk primary" href="${stay.url}" target="_blank" rel="noopener">에어비앤비 열기</a></div>` : ''}
