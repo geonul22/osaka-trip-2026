@@ -18,14 +18,14 @@
     },
     {
       "id": "stay2",
-      "name": "예시) 후보 숙소 B",
-      "url": "https://www.airbnb.co.kr/rooms/yyyyyyy",
-      "status": "후보",
+      "name": "Naniwa Ward, Osaka의 숙소 (에어비앤비, 호스트 Toshiko)",
+      "url": "https://www.airbnb.co.kr/trips/v1/1754019488245970489/ro/RESERVATION2_CHECKIN/HMCH5FS9WK",
+      "status": "예약완료",
       "checkin": "2026-11-13",
       "checkout": "2026-11-15",
-      "price_display": "1박 ¥00,000",
-      "free_cancel_deadline": "2026-10-05",
-      "note": "새로 보는 에어비앤비 후보가 있으면 이 항목을 복사해서 추가해주세요"
+      "price_display": "총 ₩654,684 (6인)",
+      "free_cancel_deadline": "2026-10-14",
+      "note": "무료취소 마감: 오사카 현지시간 10/14 16:00까지. 11/6 16:00 전까지는 부분환불 가능. 예약코드 HMCH5FS9WK, 주소: 1-chome-17-14 Ebisuhigashi, Naniwa Ward, Osaka 556-0002"
     }
   ],
 
