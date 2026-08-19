@@ -1,9 +1,10 @@
-const CACHE = 'osaka-trip-v4';
+const CACHE = 'osaka-trip-v5';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './notify-data.json',
+  './itinerary-data.json',
   './icon-192.png',
   './icon-512.png',
 ];
