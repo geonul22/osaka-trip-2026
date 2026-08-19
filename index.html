@@ -279,12 +279,29 @@
 
   /* ---- Gallery tab ---- */
   .gallery-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin: 0 4px; }
+  .gallery-item{ position:relative; }
   .gallery-item img{
     width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px;
     border:1px solid var(--line); cursor:pointer; display:block;
   }
+  .gallery-checkbox{
+    position:absolute; top:6px; left:6px; z-index:2;
+    width:20px; height:20px; cursor:pointer; accent-color:var(--amber);
+    background:rgba(0,0,0,.55); border-radius:5px;
+  }
   .gallery-cap{ font-size:10px; color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .gallery-empty{ text-align:center; color:var(--muted); font-size:12.5px; padding:40px 0; }
+  .gallery-filter{ display:flex; align-items:center; gap:7px; margin:0 4px 14px; font-size:12.5px; color:var(--muted); cursor:pointer; }
+  .gallery-filter input{ accent-color:var(--amber); width:16px; height:16px; cursor:pointer; }
+  .bulk-delete-bar{
+    display:none; align-items:center; justify-content:space-between; gap:10px;
+    margin:0 4px 14px; padding:10px 12px; background:#2a1616; border:1px solid var(--danger); border-radius:12px;
+  }
+  .bulk-delete-bar span{ font-size:12.5px; font-weight:700; color:var(--danger); }
+  .bulk-delete-bar button{
+    padding:8px 14px; border-radius:8px; border:1px solid var(--danger);
+    background:#3a1f1f; color:var(--danger); font-weight:700; font-size:12.5px; cursor:pointer;
+  }
 
   /* ---- Admin: edit/delete buttons on cards ---- */
   .admin-only{ display:none; }
@@ -471,6 +488,8 @@ let activeIdx = 0;
 let hasUnsaved = false;
 const AUTH = { idToken: null, uid: null };
 let currentLightboxPhoto = null;
+let selectedPhotoNames = new Set();
+let filterOwnOnly = false;
 
 const ICONS = {
   map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13"/><path d="M15 7v13"/></svg>',
@@ -769,18 +788,35 @@ function renderAll(){
   dlBtn.onclick = () => downloadAllPhotos(allPhotos, dlBtn);
   gPanel.appendChild(dlBtn);
 
-  if(allPhotos.length === 0){
+  const filterRow = document.createElement('label');
+  filterRow.className = 'gallery-filter';
+  filterRow.innerHTML = `<input type="checkbox" id="ownOnlyFilter" ${filterOwnOnly ? 'checked' : ''}> 내가 올린 사진만 보기 (체크하면 골라서 지울 수 있어요)`;
+  gPanel.appendChild(filterRow);
+
+  const bulkBar = document.createElement('div');
+  bulkBar.className = 'bulk-delete-bar';
+  bulkBar.style.display = selectedPhotoNames.size > 0 ? 'flex' : 'none';
+  bulkBar.innerHTML = `<span>${selectedPhotoNames.size}장 선택됨</span><button type="button" id="bulkDeleteBtn">선택 삭제</button>`;
+  gPanel.appendChild(bulkBar);
+
+  const displayPhotos = filterOwnOnly ? allPhotos.filter(p => AUTH.uid && p.ownerId === AUTH.uid) : allPhotos;
+
+  if(displayPhotos.length === 0){
     const empty = document.createElement('div');
     empty.className = 'gallery-empty';
-    empty.textContent = '아직 올라온 사진이 없어요. 일정 카드의 카메라 버튼으로 올려보세요.';
+    empty.textContent = filterOwnOnly
+      ? '아직 내가 올린 사진이 없어요.'
+      : '아직 올라온 사진이 없어요. 일정 카드의 카메라 버튼으로 올려보세요.';
     gPanel.appendChild(empty);
   } else {
     const grid = document.createElement('div');
     grid.className = 'gallery-grid';
-    allPhotos.forEach(p => {
+    displayPhotos.forEach(p => {
+      const isMine = AUTH.uid && p.ownerId === AUTH.uid;
       const cell = document.createElement('div');
       cell.className = 'gallery-item';
       cell.innerHTML = `
+        ${isMine ? `<input type="checkbox" class="gallery-checkbox" data-name="${p.name || ''}" ${selectedPhotoNames.has(p.name) ? 'checked' : ''}>` : ''}
         <img src="${p.url}" data-url="${p.url}" data-name="${p.name || ''}" data-owner="${p.ownerId || ''}" loading="lazy" alt="여행 사진">
         <div class="gallery-cap">${itemNameById[p.itemId] || ''}</div>
       `;
@@ -1056,7 +1092,52 @@ document.addEventListener('click', (e) => {
 
   const delBudgetBtn = e.target.closest('.del-budget-btn');
   if(delBudgetBtn){ deleteBudgetItem(delBudgetBtn.dataset.id); return; }
+
+  const bulkDeleteBtn = e.target.closest('#bulkDeleteBtn');
+  if(bulkDeleteBtn){ bulkDeletePhotos(); return; }
 });
+
+document.addEventListener('change', (e) => {
+  const cb = e.target.closest('.gallery-checkbox');
+  if(cb){
+    const name = cb.dataset.name;
+    if(cb.checked) selectedPhotoNames.add(name); else selectedPhotoNames.delete(name);
+    updateBulkBar();
+    return;
+  }
+  const filterCb = e.target.closest('#ownOnlyFilter');
+  if(filterCb){
+    filterOwnOnly = filterCb.checked;
+    renderAll();
+    return;
+  }
+});
+
+function updateBulkBar(){
+  const bar = document.querySelector('.bulk-delete-bar');
+  if(!bar) return;
+  bar.style.display = selectedPhotoNames.size > 0 ? 'flex' : 'none';
+  const span = bar.querySelector('span');
+  if(span) span.textContent = `${selectedPhotoNames.size}장 선택됨`;
+}
+
+async function bulkDeletePhotos(){
+  if(selectedPhotoNames.size === 0) return;
+  const names = [...selectedPhotoNames];
+  if(!confirm(`선택한 ${names.length}장을 삭제할까요? 되돌릴 수 없어요.`)) return;
+  toast('삭제 중…');
+  let successCount = 0;
+  for(const name of names){
+    try{
+      const ok = await deletePhotoDoc(name);
+      if(ok) successCount++;
+    }catch(e){ /* skip failed one */ }
+  }
+  Object.keys(PHOTOS).forEach(k => { PHOTOS[k] = PHOTOS[k].filter(p => !names.includes(p.name)); });
+  selectedPhotoNames.clear();
+  renderAll();
+  toast(`${successCount}장 삭제했어요`);
+}
 
 function openLightbox(photo){
   currentLightboxPhoto = photo;
