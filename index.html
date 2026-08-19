@@ -386,6 +386,70 @@
   }
   .album-header .ah-day{ font-family:'Noto Serif KR',serif; font-size:14.5px; color:var(--cream); font-weight:700; }
   .album-header .ah-count{ font-size:11.5px; color:var(--muted); }
+
+  /* ---- Settlement (정산) tab ---- */
+  .member-chips{ display:flex; flex-wrap:wrap; gap:7px; margin:0 4px 10px; }
+  .member-chip{
+    display:flex; align-items:center; gap:6px; padding:6px 10px; border-radius:20px;
+    background:var(--surface-alt); border:1px solid var(--line); font-size:12.5px; color:var(--cream);
+  }
+  .member-chip button{ background:none; border:none; color:var(--muted); cursor:pointer; font-size:12px; line-height:1; padding:0; }
+  .member-add-row{ display:flex; gap:8px; margin:0 4px 18px; }
+  .member-add-row input{
+    flex:1; padding:9px 11px; border-radius:9px; border:1px solid var(--line);
+    background:var(--surface); color:var(--cream); font-size:12.5px;
+  }
+  .member-add-row button{
+    padding:9px 14px; border-radius:9px; border:1px solid var(--amber); background:var(--amber);
+    color:#241605; font-weight:700; font-size:12.5px; cursor:pointer; white-space:nowrap;
+  }
+  .settle-empty{ text-align:center; color:var(--muted); font-size:12.5px; padding:30px 20px; }
+
+  .settle-summary{ display:flex; gap:10px; margin:0 4px 16px; }
+  .ss-card{
+    flex:1; background:var(--surface-alt); border:1px solid var(--line); border-radius:12px;
+    padding:12px; text-align:center;
+  }
+  .ss-card .ss-label{ font-size:11px; color:var(--muted); margin-bottom:4px; }
+  .ss-card .ss-value{ font-size:16px; font-weight:800; color:var(--amber); }
+
+  .balance-table{ margin:0 4px 18px; }
+  .balance-row{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:9px 0; border-bottom:1px solid var(--line); font-size:12.5px;
+  }
+  .balance-row:last-child{ border-bottom:none; }
+  .balance-row .bal-name{ color:var(--cream); font-weight:700; flex:1; }
+  .balance-row .bal-detail{ color:var(--muted); font-size:11px; }
+  .balance-row .bal-net{ font-weight:800; min-width:80px; text-align:right; }
+  .balance-row .bal-net.pos{ color:#7ed99a; }
+  .balance-row .bal-net.neg{ color:var(--danger); }
+
+  .transfer-list{ margin:0 4px 20px; }
+  .transfer-row{
+    display:flex; align-items:center; gap:8px; padding:10px 12px; margin-bottom:8px;
+    background:var(--surface-alt); border:1px solid var(--line); border-radius:12px; font-size:13px;
+  }
+  .transfer-row .t-arrow{ color:var(--amber); }
+  .transfer-row .t-amount{ margin-left:auto; font-weight:800; color:var(--cream); }
+  .settle-done{ text-align:center; color:var(--muted); font-size:12.5px; padding:14px 0; }
+
+  .expense-row{
+    display:flex; align-items:flex-start; gap:10px; padding:11px 0; border-bottom:1px solid var(--line);
+  }
+  .expense-row:last-child{ border-bottom:none; }
+  .expense-main{ flex:1; min-width:0; }
+  .expense-memo{ font-size:13px; color:var(--cream); font-weight:700; }
+  .expense-sub{ font-size:11px; color:var(--muted); margin-top:2px; }
+  .expense-amount{ font-size:13.5px; font-weight:800; color:var(--amber); white-space:nowrap; }
+  .expense-actions{ display:flex; gap:4px; margin-top:2px; }
+
+  .participant-checks{ display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 2px; }
+  .participant-check{
+    display:flex; align-items:center; gap:5px; padding:6px 9px; border-radius:8px;
+    border:1px solid var(--line); background:var(--surface); font-size:12px; color:var(--cream); cursor:pointer;
+  }
+  .participant-check input{ accent-color:var(--amber); cursor:pointer; }
   .bulk-delete-bar{
     display:none; align-items:center; justify-content:space-between; gap:10px;
     margin:0 4px 14px; padding:10px 12px; background:#2a1616; border:1px solid var(--danger); border-radius:12px;
@@ -570,6 +634,24 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="expenseModal">
+  <div class="modal-box">
+    <h3 id="expenseModalTitle">경비 추가</h3>
+    <label>누가 냈나요?</label>
+    <select id="ef-payer"></select>
+    <label>금액 · 엔화</label>
+    <input id="ef-amount" type="number" placeholder="7000">
+    <label>내용</label>
+    <input id="ef-memo" placeholder="예: Day2 저녁 야키니쿠">
+    <label>누가 나눠 냈나요? (기본: 전원)</label>
+    <div class="participant-checks" id="ef-participants"></div>
+    <div class="modal-actions">
+      <button id="expenseModalCancel">취소</button>
+      <button id="expenseModalSave" class="primary">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="save-bar hidden admin-only" id="saveBar">
   <span>변경사항이 있어요</span>
   <button id="saveBarBtn">GitHub에 저장</button>
@@ -618,6 +700,9 @@ let galleryViewMode = 'album'; // 'album' (날짜별) | 'grid' (최신순)
 let galleryFlatPhotos = [];  // flat, view-ordered list backing gallery-item img[data-flat-idx]
 let currentPhotoList = [];   // ordered list backing the open lightbox, for prev/next
 let currentPhotoIndex = -1;
+let MEMBERS = [];      // [name, ...] shared per-trip member roster for 정산
+let EXPENSES = [];     // [{name(docPath), payer, amount, memo, participants, tripId, ownerId, createdAt}]
+let editingExpenseId = null; // Firestore doc path of expense being edited, or null for "add"
 
 const ICONS = {
   map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13"/><path d="M15 7v13"/></svg>',
@@ -1004,7 +1089,284 @@ function renderAll(){
 
   panelsEl.appendChild(gPanel);
 
+  // 정산 탭
+  const settleIdx = galleryIdx + 1;
+  const stlTab = document.createElement('div');
+  stlTab.className = 'tab' + (activeIdx === settleIdx ? ' active' : '');
+  stlTab.dataset.idx = settleIdx;
+  stlTab.innerHTML = `<span class="d">정산</span>누가 얼마`;
+  stlTab.onclick = () => selectDay(settleIdx);
+  tabsEl.appendChild(stlTab);
+
+  const stlPanel = document.createElement('div');
+  stlPanel.className = 'day-panel' + (activeIdx === settleIdx ? ' active' : '');
+  stlPanel.dataset.idx = settleIdx;
+  renderSettlementPanel(stlPanel);
+  panelsEl.appendChild(stlPanel);
+
   updatePhotoFabVisibility();
+}
+
+// ---------------------------------------------------------------
+// Settlement (정산) panel: member roster, expense ledger, balances,
+// and the minimal-transfer suggestion for squaring up at the end.
+// ---------------------------------------------------------------
+function renderSettlementPanel(panel){
+  panel.innerHTML = '';
+
+  // ---- Member roster ----
+  const memberChips = document.createElement('div');
+  memberChips.className = 'member-chips';
+  if(MEMBERS.length === 0){
+    memberChips.innerHTML = `<span style="font-size:12.5px;color:var(--muted);">아직 등록된 인원이 없어요. 아래에서 추가해보세요.</span>`;
+  } else {
+    memberChips.innerHTML = MEMBERS.map(name => `
+      <span class="member-chip">${name}<button type="button" class="member-remove-btn" data-name="${name}" title="삭제">✕</button></span>
+    `).join('');
+  }
+  panel.appendChild(memberChips);
+
+  const addRow = document.createElement('div');
+  addRow.className = 'member-add-row';
+  addRow.innerHTML = `
+    <input type="text" id="newMemberName" placeholder="이름 추가 (예: 건우)">
+    <button type="button" id="addMemberBtn">+ 추가</button>
+  `;
+  panel.appendChild(addRow);
+
+  const tripExpenses = EXPENSES.filter(e => e.tripId === currentTrip.id);
+
+  if(MEMBERS.length < 2){
+    const empty = document.createElement('div');
+    empty.className = 'settle-empty';
+    empty.textContent = '정산을 시작하려면 먼저 인원을 2명 이상 등록해주세요.';
+    panel.appendChild(empty);
+    return;
+  }
+
+  const addExpenseBtn = document.createElement('button');
+  addExpenseBtn.type = 'button';
+  addExpenseBtn.className = 'add-item-btn';
+  addExpenseBtn.style.marginBottom = '16px';
+  addExpenseBtn.textContent = '+ 경비 추가';
+  addExpenseBtn.onclick = () => openExpenseModal(null);
+  panel.appendChild(addExpenseBtn);
+
+  // ---- Balances ----
+  const totalSpent = tripExpenses.reduce((s,e) => s + e.amount, 0);
+  const balances = MEMBERS.map(name => {
+    const paid = tripExpenses.filter(e => e.payer === name).reduce((s,e) => s + e.amount, 0);
+    const owed = tripExpenses.reduce((s,e) => {
+      if(!e.participants.includes(name) || e.participants.length === 0) return s;
+      return s + e.amount / e.participants.length;
+    }, 0);
+    return { name, paid, owed, net: paid - owed };
+  });
+
+  const summary = document.createElement('div');
+  summary.className = 'settle-summary';
+  summary.innerHTML = `
+    <div class="ss-card"><div class="ss-label">총 지출</div><div class="ss-value">¥${Math.round(totalSpent).toLocaleString()}</div></div>
+    <div class="ss-card"><div class="ss-label">항목 수</div><div class="ss-value">${tripExpenses.length}건</div></div>
+  `;
+  panel.appendChild(summary);
+
+  if(tripExpenses.length > 0){
+    const balTitle = document.createElement('div');
+    balTitle.className = 'bn-title';
+    balTitle.style.margin = '0 4px 8px';
+    balTitle.textContent = '인당 정산 잔액 (+ 받을 돈 · − 보낼 돈)';
+    panel.appendChild(balTitle);
+
+    const balTable = document.createElement('div');
+    balTable.className = 'balance-table';
+    balTable.innerHTML = balances.map(b => `
+      <div class="balance-row">
+        <div class="bal-name">${b.name}<div class="bal-detail">낸 돈 ¥${Math.round(b.paid).toLocaleString()} · 분담액 ¥${Math.round(b.owed).toLocaleString()}</div></div>
+        <div class="bal-net ${b.net >= 0 ? 'pos' : 'neg'}">${b.net >= 0 ? '+' : '−'}¥${Math.round(Math.abs(b.net)).toLocaleString()}</div>
+      </div>
+    `).join('');
+    panel.appendChild(balTable);
+
+    const transferTitle = document.createElement('div');
+    transferTitle.className = 'bn-title';
+    transferTitle.style.margin = '0 4px 8px';
+    transferTitle.textContent = '최소 송금 정산';
+    panel.appendChild(transferTitle);
+
+    const transfers = computeSettlementTransfers(balances);
+    const transferList = document.createElement('div');
+    transferList.className = 'transfer-list';
+    if(transfers.length === 0){
+      transferList.innerHTML = `<div class="settle-done">모두 정산이 맞아요 🎉</div>`;
+    } else {
+      transferList.innerHTML = transfers.map(t => `
+        <div class="transfer-row">
+          <span>${t.from}</span><span class="t-arrow">→</span><span>${t.to}</span>
+          <span class="t-amount">¥${t.amount.toLocaleString()}</span>
+        </div>
+      `).join('');
+    }
+    panel.appendChild(transferList);
+  }
+
+  // ---- Expense ledger ----
+  const ledgerTitle = document.createElement('div');
+  ledgerTitle.className = 'bn-title';
+  ledgerTitle.style.margin = '0 4px 8px';
+  ledgerTitle.textContent = '경비 내역';
+  panel.appendChild(ledgerTitle);
+
+  if(tripExpenses.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'settle-empty';
+    empty.textContent = '아직 등록된 경비가 없어요. 위의 "경비 추가" 버튼으로 시작해보세요.';
+    panel.appendChild(empty);
+  } else {
+    const ledger = document.createElement('div');
+    ledger.className = 'balance-table';
+    ledger.innerHTML = tripExpenses.map(e => {
+      const isMine = AUTH.uid && e.ownerId === AUTH.uid;
+      const dateLabel = new Date(e.createdAt).toLocaleDateString('ko-KR', { month:'numeric', day:'numeric' });
+      const participantsLabel = e.participants.length === MEMBERS.length ? '전원' : e.participants.join(', ');
+      return `
+        <div class="expense-row">
+          <div class="expense-main">
+            <div class="expense-memo">${e.memo || '(내용 없음)'}</div>
+            <div class="expense-sub">${e.payer} 결제 · ${participantsLabel} 분담 · ${dateLabel}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="expense-amount">¥${e.amount.toLocaleString()}</div>
+            ${isMine ? `<div class="expense-actions">
+              <button type="button" class="icon-btn edit-expense-btn" data-id="${e.name}" title="수정">✎</button>
+              <button type="button" class="icon-btn danger del-expense-btn" data-id="${e.name}" title="삭제">✕</button>
+            </div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+    panel.appendChild(ledger);
+  }
+}
+
+function openExpenseModal(id){
+  if(MEMBERS.length < 2){ toast('먼저 인원을 등록해주세요'); return; }
+  editingExpenseId = id;
+  const modal = document.getElementById('expenseModal');
+  const title = document.getElementById('expenseModalTitle');
+  const payerSel = document.getElementById('ef-payer');
+  payerSel.innerHTML = MEMBERS.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  const partWrap = document.getElementById('ef-participants');
+  partWrap.innerHTML = MEMBERS.map(m => `
+    <label class="participant-check"><input type="checkbox" value="${m}" checked> ${m}</label>
+  `).join('');
+
+  if(id){
+    const exp = EXPENSES.find(e => e.name === id);
+    if(!exp) return;
+    title.textContent = '경비 수정';
+    payerSel.value = exp.payer;
+    document.getElementById('ef-amount').value = exp.amount;
+    document.getElementById('ef-memo').value = exp.memo;
+    partWrap.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.checked = exp.participants.includes(cb.value);
+    });
+  } else {
+    title.textContent = '경비 추가';
+    document.getElementById('ef-amount').value = '';
+    document.getElementById('ef-memo').value = '';
+  }
+  modal.classList.add('show');
+}
+
+document.getElementById('expenseModalCancel').addEventListener('click', () => {
+  document.getElementById('expenseModal').classList.remove('show');
+});
+
+document.getElementById('expenseModalSave').addEventListener('click', async () => {
+  const payer = document.getElementById('ef-payer').value;
+  const amount = Number(document.getElementById('ef-amount').value);
+  const memo = document.getElementById('ef-memo').value.trim();
+  const participants = [...document.querySelectorAll('#ef-participants input:checked')].map(cb => cb.value);
+
+  if(!amount || amount <= 0){ alert('금액을 입력해주세요'); return; }
+  if(participants.length === 0){ alert('나눠 낸 사람을 1명 이상 선택해주세요'); return; }
+
+  const saveBtn = document.getElementById('expenseModalSave');
+  saveBtn.disabled = true; saveBtn.textContent = '저장 중…';
+  try{
+    if(editingExpenseId){
+      const ok = await updateExpenseDoc(editingExpenseId, payer, amount, memo, participants);
+      if(ok){
+        const idx = EXPENSES.findIndex(e => e.name === editingExpenseId);
+        if(idx > -1) EXPENSES[idx] = { ...EXPENSES[idx], payer, amount: Math.round(amount), memo, participants };
+      } else {
+        toast('수정하지 못했어요'); return;
+      }
+    } else {
+      const created = await addExpenseDoc(currentTrip.id, payer, amount, memo, participants);
+      EXPENSES.unshift(created);
+    }
+    document.getElementById('expenseModal').classList.remove('show');
+    renderAll();
+    toast('저장했어요');
+  }catch(e){
+    toast('저장 중 오류가 발생했어요');
+  }finally{
+    saveBtn.disabled = false; saveBtn.textContent = '저장';
+  }
+});
+
+// ---- Member roster: add/remove (writes straight to Firestore, no
+// GitHub admin token needed — anyone in the group can set this up) ----
+async function addMember(){
+  const input = document.getElementById('newMemberName');
+  if(!input) return;
+  const name = input.value.trim();
+  if(!name) return;
+  if(MEMBERS.includes(name)){ toast('이미 등록된 이름이에요'); input.value = ''; return; }
+  const updated = [...MEMBERS, name];
+  input.disabled = true;
+  try{
+    const ok = await saveMembers(currentTrip.id, updated);
+    if(ok){ MEMBERS = updated; renderAll(); toast(`${name}님을 추가했어요`); }
+    else toast('추가하지 못했어요');
+  }catch(e){
+    toast('추가 중 오류가 발생했어요');
+  }finally{
+    if(input) input.disabled = false;
+  }
+}
+
+async function removeMember(name){
+  if(!confirm(`${name}님을 인원 목록에서 삭제할까요? (기존 경비 내역은 남아있어요)`)) return;
+  const updated = MEMBERS.filter(m => m !== name);
+  try{
+    const ok = await saveMembers(currentTrip.id, updated);
+    if(ok){ MEMBERS = updated; renderAll(); toast('삭제했어요'); }
+    else toast('삭제하지 못했어요');
+  }catch(e){
+    toast('삭제 중 오류가 발생했어요');
+  }
+}
+
+// ---- Expense delete (only the device that added it can delete —
+// same ownerId check the photo gallery uses) ----
+async function deleteExpense(docName){
+  if(!confirm('이 경비 내역을 삭제할까요? 되돌릴 수 없어요.')) return;
+  try{
+    const ok = await deleteExpenseDoc(docName);
+    if(ok){
+      EXPENSES = EXPENSES.filter(e => e.name !== docName);
+      renderAll();
+      toast('삭제했어요');
+    } else {
+      toast('삭제하지 못했어요');
+    }
+  }catch(e){
+    toast('삭제 중 오류가 발생했어요');
+  }
 }
 
 function ddayInfo(targetDateStr){
@@ -1189,6 +1551,125 @@ async function deletePhotoDoc(docName){
   return res.ok;
 }
 
+// ---------------------------------------------------------------
+// Settlement (정산): member roster + expenses, both stored in
+// Firestore so any of the 6 friends can add entries live during the
+// trip without needing a GitHub admin token (same trust model as photos).
+// ---------------------------------------------------------------
+async function loadMembers(tripId){
+  try{
+    const res = await fetch(`https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/settings/members_${tripId}`);
+    if(!res.ok) return [];
+    const data = await res.json();
+    const values = (data.fields && data.fields.names && data.fields.names.arrayValue && data.fields.names.arrayValue.values) || [];
+    return values.map(v => v.stringValue).filter(Boolean);
+  }catch(e){
+    return [];
+  }
+}
+
+async function saveMembers(tripId, names){
+  await ensureAuth();
+  const res = await fetch(`https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/settings/members_${tripId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${AUTH.idToken}` },
+    body: JSON.stringify({ fields: { names: { arrayValue: { values: names.map(n => ({ stringValue: n })) } } } })
+  });
+  return res.ok;
+}
+
+async function loadExpenses(){
+  try{
+    const res = await fetch(`https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/expenses?pageSize=500`);
+    if(!res.ok) return [];
+    const data = await res.json();
+    const list = (data.documents || []).map(doc => {
+      const f = doc.fields || {};
+      const participants = ((f.participants && f.participants.arrayValue && f.participants.arrayValue.values) || [])
+        .map(v => v.stringValue).filter(Boolean);
+      const amountField = f.amount || {};
+      const amount = Number(amountField.integerValue != null ? amountField.integerValue : amountField.doubleValue) || 0;
+      return {
+        name: doc.name,
+        payer: (f.payer && f.payer.stringValue) || '',
+        amount,
+        memo: (f.memo && f.memo.stringValue) || '',
+        participants,
+        tripId: (f.tripId && f.tripId.stringValue) || '',
+        ownerId: (f.ownerId && f.ownerId.stringValue) || '',
+        createdAt: (f.createdAt && f.createdAt.timestampValue) || doc.createTime,
+      };
+    });
+    list.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return list;
+  }catch(e){
+    return [];
+  }
+}
+
+async function addExpenseDoc(tripId, payer, amount, memo, participants){
+  await ensureAuth();
+  const res = await fetch(`https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/expenses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${AUTH.idToken}` },
+    body: JSON.stringify({ fields: {
+      tripId: { stringValue: tripId },
+      payer: { stringValue: payer },
+      amount: { integerValue: String(Math.round(amount)) },
+      memo: { stringValue: memo },
+      participants: { arrayValue: { values: participants.map(p => ({ stringValue: p })) } },
+      createdAt: { timestampValue: new Date().toISOString() },
+      ownerId: { stringValue: AUTH.uid },
+    }})
+  });
+  if(!res.ok) throw new Error('경비를 저장하지 못했어요');
+  const data = await res.json();
+  return { name: data.name, tripId, payer, amount: Math.round(amount), memo, participants, ownerId: AUTH.uid, createdAt: new Date().toISOString() };
+}
+
+async function updateExpenseDoc(docName, payer, amount, memo, participants){
+  await ensureAuth();
+  const mask = ['payer','amount','memo','participants'].map(f => `updateMask.fieldPaths=${f}`).join('&');
+  const res = await fetch(`https://firestore.googleapis.com/v1/${docName}?${mask}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${AUTH.idToken}` },
+    body: JSON.stringify({ fields: {
+      payer: { stringValue: payer },
+      amount: { integerValue: String(Math.round(amount)) },
+      memo: { stringValue: memo },
+      participants: { arrayValue: { values: participants.map(p => ({ stringValue: p })) } },
+    }})
+  });
+  return res.ok;
+}
+
+async function deleteExpenseDoc(docName){
+  await ensureAuth();
+  const res = await fetch(`https://firestore.googleapis.com/v1/${docName}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${AUTH.idToken}` }
+  });
+  return res.ok;
+}
+
+// Greedy min-transaction settlement: repeatedly match the biggest creditor
+// with the biggest debtor until every balance is (near) zero.
+function computeSettlementTransfers(balances){
+  const creditors = balances.filter(b => b.net > 0.5).map(b => ({ ...b })).sort((a,b) => b.net - a.net);
+  const debtors = balances.filter(b => b.net < -0.5).map(b => ({ name: b.name, net: -b.net })).sort((a,b) => b.net - a.net);
+  const transfers = [];
+  let i = 0, j = 0;
+  while(i < debtors.length && j < creditors.length){
+    const pay = Math.min(debtors[i].net, creditors[j].net);
+    if(pay > 0.5) transfers.push({ from: debtors[i].name, to: creditors[j].name, amount: Math.round(pay) });
+    debtors[i].net -= pay;
+    creditors[j].net -= pay;
+    if(debtors[i].net <= 0.5) i++;
+    if(creditors[j].net <= 0.5) j++;
+  }
+  return transfers;
+}
+
 async function downloadSinglePhoto(url){
   try{
     const res = await fetch(url);
@@ -1329,6 +1810,18 @@ document.addEventListener('click', (e) => {
 
   const bulkDeleteBtn = e.target.closest('#bulkDeleteBtn');
   if(bulkDeleteBtn){ bulkDeletePhotos(); return; }
+
+  const addMemberBtn = e.target.closest('#addMemberBtn');
+  if(addMemberBtn){ addMember(); return; }
+
+  const memberRemoveBtn = e.target.closest('.member-remove-btn');
+  if(memberRemoveBtn){ removeMember(memberRemoveBtn.dataset.name); return; }
+
+  const editExpenseBtn = e.target.closest('.edit-expense-btn');
+  if(editExpenseBtn){ openExpenseModal(editExpenseBtn.dataset.id); return; }
+
+  const delExpenseBtn = e.target.closest('.del-expense-btn');
+  if(delExpenseBtn){ deleteExpense(delExpenseBtn.dataset.id); return; }
 });
 
 document.addEventListener('change', (e) => {
@@ -1408,6 +1901,7 @@ document.getElementById('lightbox').addEventListener('click', (e) => {
 document.getElementById('lightboxBox').addEventListener('click', (e) => e.stopPropagation());
 document.getElementById('lbClose').addEventListener('click', closeLightbox);
 document.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && e.target && e.target.id === 'newMemberName'){ addMember(); return; }
   if(!document.getElementById('lightbox').classList.contains('show')) return;
   if(e.key === 'ArrowLeft') lbGoto(-1);
   else if(e.key === 'ArrowRight') lbGoto(1);
@@ -1849,6 +2343,8 @@ async function loadInitial(){
     await Promise.all([
       selectTrip(startTrip.id, { silent: true }),
       loadPhotos().then(p => { PHOTOS = p; renderAll(); }),
+      loadMembers(startTrip.id).then(m => { MEMBERS = m; renderAll(); }),
+      loadExpenses().then(ex => { EXPENSES = ex; renderAll(); }),
       ensureAuth().catch(() => {})
     ]);
   }catch(e){
@@ -1872,15 +2368,23 @@ async function refreshData(opts){
       fetch(currentTrip.dataFile, { cache: 'no-store' }).then(r => r.json()),
       loadPhotos()
     ]);
+    const [members, expenses] = await Promise.all([
+      loadMembers(currentTrip.id),
+      loadExpenses()
+    ]);
     const changed = JSON.stringify(TRIPS) !== JSON.stringify(trips)
       || JSON.stringify(DATA) !== JSON.stringify(itinerary.days)
       || JSON.stringify(BUDGET) !== JSON.stringify(itinerary.budget)
-      || JSON.stringify(PHOTOS) !== JSON.stringify(photos);
+      || JSON.stringify(PHOTOS) !== JSON.stringify(photos)
+      || JSON.stringify(MEMBERS) !== JSON.stringify(members)
+      || JSON.stringify(EXPENSES) !== JSON.stringify(expenses);
     TRIPS = trips;
     currentTrip = TRIPS.find(t => t.id === currentTrip.id) || currentTrip;
     DATA = itinerary.days;
     BUDGET = itinerary.budget;
     PHOTOS = photos;
+    MEMBERS = members;
+    EXPENSES = expenses;
     renderTripSwitcher();
     renderAll();
     if(opts.manual) toast(changed ? '최신 내용으로 업데이트했어요' : '이미 최신 상태예요');
