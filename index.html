@@ -36,12 +36,14 @@
     --shop: #5fc4bb;
     --stay: #9aa0b8;
     --alt-line: #4a5378;
+    --danger: #e07a7a;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
   html,body{margin:0;padding:0;background:var(--bg); color:var(--cream); font-family:'Noto Sans KR',sans-serif;}
   body{padding-bottom:48px;}
 
   .hero{
+    position:relative;
     padding: calc(28px + env(safe-area-inset-top)) 20px 18px;
     background:
       radial-gradient(circle at 85% -10%, rgba(224,164,88,0.16), transparent 55%),
@@ -58,18 +60,28 @@
   }
   .hero p{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.6;}
 
+  .admin-toggle{
+    position:absolute; top: calc(14px + env(safe-area-inset-top)); right:14px;
+    width:34px; height:34px; border-radius:50%;
+    background: var(--surface); border:1px solid var(--line); color:var(--muted);
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+    cursor:pointer;
+  }
+  body.admin-mode .admin-toggle{ background: var(--amber-dim); border-color:var(--amber); color:var(--amber); }
+
   .tabs{
     position: sticky; top:0; z-index: 20;
     display:flex; gap:0;
     background: var(--bg-soft);
     border-bottom: 1px solid var(--line);
     padding: 0 12px;
+    overflow-x:auto;
   }
   .tab{
     flex:1; text-align:center; padding: 14px 4px 12px;
     font-size: 13.5px; font-weight:700; color: var(--muted);
     border-bottom: 3px solid transparent;
-    cursor:pointer; user-select:none;
+    cursor:pointer; user-select:none; white-space:nowrap;
     transition: color .2s, border-color .2s;
   }
   .tab .d{ display:block; font-family:'Noto Serif KR',serif; font-size:17px; margin-bottom:2px; }
@@ -235,6 +247,95 @@
   .check-row.done{ opacity:.5; }
   .check-name{ font-size:12.5px; color:var(--cream); }
   .check-date{ display:block; font-size:10.5px; color:var(--muted); margin-top:2px; font-weight:400; }
+
+  /* ---- Photos ---- */
+  .photo-row{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  .photo-thumb{
+    width:52px; height:52px; object-fit:cover; border-radius:8px;
+    border:1px solid var(--line); cursor:pointer;
+  }
+  .photo-add{
+    width:52px; height:52px; border-radius:8px;
+    background: var(--surface-alt); border:1px dashed var(--line); color:var(--muted);
+    font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; text-align:center; line-height:1.3; padding:2px;
+  }
+  .photo-add svg{ width:16px; height:16px; }
+
+  .lightbox-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:100;
+    display:none; align-items:center; justify-content:center; padding:24px;
+  }
+  .lightbox-overlay.show{ display:flex; }
+  .lightbox-overlay img{ max-width:100%; max-height:100%; border-radius:10px; }
+
+  /* ---- Admin: edit/delete buttons on cards ---- */
+  .admin-only{ display:none; }
+  body.admin-mode .admin-only{ display:inline-flex; }
+  body.admin-mode .admin-only.block{ display:block; }
+  body.admin-mode .admin-only.flex{ display:flex; }
+
+  .card-admin-btns{ margin-left:auto; display:flex; gap:4px; }
+  .icon-btn{
+    width:24px; height:24px; border-radius:6px; border:1px solid var(--line);
+    background:var(--surface-alt); color:var(--muted); font-size:12px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .icon-btn.danger{ color: var(--danger); border-color: var(--danger); }
+
+  .add-item-btn{
+    display:block; width:100%; margin-top:10px; padding:12px;
+    background: var(--surface-alt); border:1px dashed var(--line); border-radius:12px;
+    color:var(--amber); font-weight:700; font-size:13px; cursor:pointer;
+  }
+
+  /* ---- Modal ---- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:110;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background: var(--bg-soft); border:1px solid var(--line); border-radius:18px 18px 0 0;
+    width:100%; max-width:480px; max-height:88vh; overflow-y:auto;
+    padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+  }
+  .modal-box h3{ margin:0 0 14px; font-family:'Noto Serif KR',serif; font-size:17px; }
+  .modal-box label{ display:block; font-size:12px; color:var(--muted); font-weight:700; margin: 12px 0 5px; }
+  .modal-box input, .modal-box select, .modal-box textarea{
+    width:100%; background:var(--surface); border:1px solid var(--line); color:var(--cream);
+    border-radius:9px; padding:10px 11px; font-size:13.5px; font-family:inherit;
+  }
+  .modal-box textarea{ resize:vertical; }
+  .modal-actions{ display:flex; gap:8px; margin-top:18px; }
+  .modal-actions button{
+    flex:1; padding:12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--surface); color:var(--cream); font-weight:700; font-size:13.5px; cursor:pointer;
+  }
+  .modal-actions button.primary{ background:var(--amber-dim); border-color:var(--amber); color:var(--amber); }
+
+  /* ---- Save bar & toast ---- */
+  .save-bar{
+    position:fixed; left:12px; right:12px; bottom: calc(14px + env(safe-area-inset-bottom));
+    z-index:90; background: var(--amber-dim); border:1px solid var(--amber);
+    border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  .save-bar.hidden{ display:none; }
+  .save-bar span{ flex:1; font-size:12.5px; color:var(--amber); font-weight:700; }
+  .save-bar button{
+    padding:9px 14px; border-radius:9px; border:1px solid var(--amber);
+    background: var(--amber); color:#2a1c0a; font-weight:800; font-size:12.5px; cursor:pointer;
+  }
+  .save-bar button:disabled{ opacity:.6; }
+
+  .toast{
+    position:fixed; left:50%; bottom: 90px; transform:translateX(-50%);
+    background: var(--surface); border:1px solid var(--line); color:var(--cream);
+    padding:10px 16px; border-radius:10px; font-size:12.5px; z-index:120;
+    opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .toast.show{ opacity:1; }
 </style>
 </head>
 <body>
@@ -243,49 +344,117 @@
   <div class="eyebrow">OSAKA · 11.13 &ndash; 11.15</div>
   <h1>오사카 3박4일 여행 노선도</h1>
   <p>고등학교 친구 6인, 난바 · 신사이바시 숙소 기준. 날짜별로 탭을 눌러 확인하세요.</p>
+  <button class="admin-toggle" id="adminToggle" title="관리자 모드">⚙</button>
 </div>
 
 <div class="tabs" id="tabs"></div>
 <div id="panels"></div>
 
-<footer>지도 보기 · 길찾기 버튼은 구글맵으로 연결됩니다</footer>
+<footer>지도 보기 · 길찾기 버튼은 구글맵으로 연결됩니다 · 사진은 6인 모두에게 공유돼요</footer>
+
+<input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
+
+<div class="lightbox-overlay" id="lightbox">
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<div class="modal-overlay" id="itemModal">
+  <div class="modal-box">
+    <h3 id="itemModalTitle">일정 추가</h3>
+    <label>날짜 그룹 (예: Day1 · 11/13(금))</label>
+    <input id="f-day" placeholder="Day1 · 11/13(금)">
+    <label>시간</label>
+    <input id="f-time" placeholder="14:00">
+    <label>유형</label>
+    <input id="f-type" list="typeList" placeholder="관광">
+    <datalist id="typeList">
+      <option value="이동"></option><option value="식사(아침)"></option><option value="식사(점심)"></option>
+      <option value="식사(저녁)"></option><option value="관광"></option><option value="술집(1차)"></option>
+      <option value="술집(2차)"></option><option value="술집(3차)"></option><option value="쇼핑"></option><option value="숙소"></option>
+    </datalist>
+    <label>우선순위</label>
+    <select id="f-priority">
+      <option value="-">-</option><option value="대표">대표</option><option value="대안">대안</option>
+    </select>
+    <label>장소명</label>
+    <input id="f-name" placeholder="장소 이름">
+    <label>주소 / 위치 설명</label>
+    <input id="f-addr" placeholder="지도 검색에도 쓰여요">
+    <label>메모</label>
+    <textarea id="f-memo" rows="2"></textarea>
+    <label>홈페이지 (선택)</label>
+    <input id="f-home" placeholder="https://">
+    <label>가격 · 엔화 (선택)</label>
+    <input id="f-price" type="number" placeholder="1200">
+    <label>가격 라벨 (선택, 예: 무료)</label>
+    <input id="f-priceLabel" placeholder="무료">
+    <div class="modal-actions">
+      <button id="itemModalCancel">취소</button>
+      <button id="itemModalSave" class="primary">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="budgetModal">
+  <div class="modal-box">
+    <h3 id="budgetModalTitle">예산 항목 추가</h3>
+    <label>분류</label>
+    <input id="bf-cat" list="catList" placeholder="교통">
+    <datalist id="catList">
+      <option value="교통"></option><option value="입장료"></option><option value="식사"></option><option value="기타"></option>
+    </datalist>
+    <label>이름</label>
+    <input id="bf-name" placeholder="예: 지하철 1회">
+    <label>가격 · 엔화</label>
+    <input id="bf-price" type="number" placeholder="900">
+    <label>메모 (선택)</label>
+    <input id="bf-note" placeholder="">
+    <div class="modal-actions">
+      <button id="budgetModalCancel">취소</button>
+      <button id="budgetModalSave" class="primary">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="save-bar hidden admin-only" id="saveBar">
+  <span>변경사항이 있어요</span>
+  <button id="saveBarBtn">GitHub에 저장</button>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-const DATA = [{"day": "Day1 · 11/13(금)", "time": "08:00", "type": "이동", "priority": "-", "name": "김포 출발", "addr": "김포국제공항", "memo": "간사이행 출발", "map": "https://www.google.com/maps/search/?api=1&query=%EA%B9%80%ED%8F%AC%EA%B5%AD%EC%A0%9C%EA%B3%B5%ED%95%AD", "dir": "https://www.google.com/maps/dir/?api=1&destination=%EA%B9%80%ED%8F%AC%EA%B5%AD%EC%A0%9C%EA%B3%B5%ED%95%AD", "home": "https://www.airport.co.kr/gimpo/main.do", "price": null, "priceLabel": null}, {"day": "Day1 · 11/13(금)", "time": "09:40", "type": "이동", "priority": "-", "name": "간사이공항 도착", "addr": "간사이국제공항", "memo": "입국심사·수하물 수령까지 약 1시간 소요", "map": "https://www.google.com/maps/search/?api=1&query=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "home": "https://www.kansai-airport.or.jp/", "price": null, "priceLabel": null}, {"day": "Day1 · 11/13(금)", "time": "11:00", "type": "이동", "priority": "대표", "name": "난카이 공항급행 탑승", "addr": "간사이공항역", "memo": "예약 없이 바로 탑승, 난바역까지 환승없음·약 44~50분. 배차간격 15~20분으로 대기 짧음. 난바역 하차 후 숙소(고즈 3-11-12)까지 도보 약 10분, 또는 니혼바시역까지 1정거장 이동 시 도보 약 5분", "map": "https://www.google.com/maps/search/?api=1&query=%E9%96%A2%E8%A5%BF%E7%A9%BA%E6%B8%AF%E9%A7%85%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%96%A2%E8%A5%BF%E7%A9%BA%E6%B8%AF%E9%A7%85%20%E5%A4%A7%E9%98%AA", "home": "https://www.kansai-airport.or.jp/", "price": 970, "priceLabel": null}, {"day": "Day1 · 11/13(금)", "time": "11:00", "type": "이동", "priority": "대안", "name": "난카이 라피트 특급 탑승", "addr": "간사이공항역", "memo": "쾌적하고 좌석 보장되지만 지정석 사전예약 권장, 배차간격이 넓어(30분~1시간) 대기 발생 가능. 난바역까지 환승없음·약 34~39분", "map": "https://www.google.com/maps/search/?api=1&query=%E9%96%A2%E8%A5%BF%E7%A9%BA%E6%B8%AF%E9%A7%85%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%96%A2%E8%A5%BF%E7%A9%BA%E6%B8%AF%E9%A7%85%20%E5%A4%A7%E9%98%AA", "home": "https://www.kansai-airport.or.jp/", "price": 1670, "priceLabel": null}, {"day": "Day1 · 11/13(금)", "time": "11:00", "type": "이동", "priority": "대안", "name": "리무진 버스 (난바 방면)", "addr": "간사이공항 버스터미널", "memo": "캐리어를 좌석 앞에 두지 않고 수하물칸에 실을 수 있어 짐 많을 때 편리. 약 40~50분(도로상황에 따라 변동), 배차 1시간 간격·선착순 좌석이라 만석 시 다음 편 대기", "map": "https://www.google.com/maps/search/?api=1&query=%E9%96%A2%E8%A5%BF%E7%A9%BA%E6%B8%AF%E9%A7%85%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%96%A2%E8%A5%BF%E7%A9%BA%E6%B8%AF%E9%A7%85%20%E5%A4%A7%E9%98%AA", "home": "", "price": 1300, "priceLabel": null}, {"day": "Day1 · 11/13(금)", "time": "11:00", "type": "이동", "priority": "대안", "name": "JR 간사이공항선 (덴노지 환승)", "addr": "간사이공항역", "memo": "덴노지역에서 오사카메트로 미도스지선 등으로 1회 환승 필요, 약 50~65분. JR패스 소지 시 무료라 패스 보유자에게 유리", "map": "https://www.google.com/maps/search/?api=1&query=%E9%96%A2%E8%A5%BF%E7%A9%BA%E6%B8%AF%E9%A7%85%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%96%A2%E8%A5%BF%E7%A9%BA%E6%B8%AF%E9%A7%85%20%E5%A4%A7%E9%98%AA", "home": "", "price": 1060, "priceLabel": null}, {"day": "Day1 · 11/13(금)", "time": "12:00", "type": "식사(점심)", "priority": "대표", "name": "우나기노 나카쇼 난바점", "addr": "난바 에비스바시 h+빌딩 4F", "memo": "장어덮밥 3단 즐기기(그냥→야쿠미→오차즈케). 6명 예약 추천 +81 80-2397-5246", "map": "https://www.google.com/maps/search/?api=1&query=34.6673756,135.5014911", "dir": "https://www.google.com/maps/dir/?api=1&destination=34.6673756,135.5014911", "home": "", "price": 4500, "priceLabel": null}, {"day": "Day1 · 11/13(금)", "time": "12:00", "type": "식사(점심)", "priority": "대안", "name": "마구로야 쿠로긴 + 18번 타코야키", "addr": "구로몬시장 내", "memo": "참치덮밥 한 곳, 타코야키 한 곳 — 나눠 먹기 좋음", "map": "https://www.google.com/maps/search/?api=1&query=%E9%BB%92%E9%96%80%E5%B8%82%E5%A0%B4%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%BB%92%E9%96%80%E5%B8%82%E5%A0%B4%20%E5%A4%A7%E9%98%AA", "home": "", "price": 2500, "priceLabel": null}, {"day": "Day1 · 11/13(금)", "time": "14:00", "type": "관광", "priority": "-", "name": "도톤보리 · 신사이바시 산책", "addr": "도톤보리", "memo": "글리코상, 에비스바시, 상점가 쇼핑", "map": "https://www.google.com/maps/search/?api=1&query=%E9%81%93%E9%A0%93%E5%A0%80%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%81%93%E9%A0%93%E5%A0%80%20%E5%A4%A7%E9%98%AA", "home": "", "price": 0, "priceLabel": "무료"}, {"day": "Day1 · 11/13(금)", "time": "18:00", "type": "식사(저녁)", "priority": "대표", "name": "치보 도톤보리 본점 (千房)", "addr": "오사카시 주오구 도톤보리 1-5-5 도톤보리빌딩 1~6F · 난바역 도보 7분", "memo": "1973년 창업, 오코노미야키 명가. 영업 11:00~23:00. 6인 단체석 예약 추천.", "map": "https://www.google.com/maps/search/?api=1&query=%E5%8D%83%E6%88%BF%20%E9%81%93%E9%A0%93%E5%A0%80%E6%9C%AC%E5%BA%97%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E5%8D%83%E6%88%BF%20%E9%81%93%E9%A0%93%E5%A0%80%E6%9C%AC%E5%BA%97%20%E5%A4%A7%E9%98%AA", "home": "https://shop.chibo.com/detail/28/", "price": 2200, "priceLabel": null}, {"day": "Day1 · 11/13(금)", "time": "20:00", "type": "술집(1차)", "priority": "대표", "name": "토리키조쿠 도톤보리나카자점", "addr": "도톤보리", "memo": "가성비 야키토리 체인, 단체석 여유. 19~21시 웨이팅 가능.", "map": "https://www.google.com/maps/search/?api=1&query=%E9%B3%A5%E8%B2%B4%E6%97%8F%20%E9%81%93%E9%A0%93%E5%A0%80%E4%B8%AD%E5%BA%A7%E5%BA%97%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%B3%A5%E8%B2%B4%E6%97%8F%20%E9%81%93%E9%A0%93%E5%A0%80%E4%B8%AD%E5%BA%A7%E5%BA%97%20%E5%A4%A7%E9%98%AA", "home": "https://torikizoku.co.jp/", "price": 3000, "priceLabel": null}, {"day": "Day2 · 11/14(토)", "time": "08:00", "type": "식사(아침)", "priority": "-", "name": "숙소 근처 아침", "addr": "난바/신사이바시 숙소 인근", "memo": "카페 또는 편의점에서 가볍게", "map": "https://www.google.com/maps/search/?api=1&query=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "home": "", "price": 900, "priceLabel": null}, {"day": "Day2 · 11/14(토)", "time": "09:30", "type": "관광", "priority": "-", "name": "오사카성 공원", "addr": "오사카시 주오구 오사카조", "memo": "천수각까지 둘러보기, 오사카 대표 랜드마크", "map": "https://www.google.com/maps/search/?api=1&query=%E5%A4%A7%E9%98%AA%E5%9F%8E%E5%85%AC%E5%9C%92", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E5%A4%A7%E9%98%AA%E5%9F%8E%E5%85%AC%E5%9C%92", "home": "https://www.osakacastle.net/", "price": 0, "priceLabel": "무료 · 텐슈카쿠 선택 1,200엔(대인, 25.4~ 인상)"}, {"day": "Day2 · 11/14(토)", "time": "12:00", "type": "이동", "priority": "-", "name": "신세카이로 이동", "addr": "전철 이용", "memo": "약 20~30분 소요", "map": "https://www.google.com/maps/search/?api=1&query=%E6%96%B0%E4%B8%96%E7%95%8C%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E6%96%B0%E4%B8%96%E7%95%8C%20%E5%A4%A7%E9%98%AA", "home": "", "price": 230, "priceLabel": null}, {"day": "Day2 · 11/14(토)", "time": "12:30", "type": "식사(점심)", "priority": "대표", "name": "쿠시카츠 다루마 신세카이 총본점", "addr": "오사카시 나니와구 에비스히가시 1-6-8", "memo": "1929년 창업, 원조 쿠시카츠. '소스 2번 찍기 금지' 룰. 웨이팅 있으면 인근 잔잔점 대안.", "map": "https://www.google.com/maps/search/?api=1&query=%E4%B8%B2%E3%81%8B%E3%81%A4%E3%81%A0%E3%82%8B%E3%81%BE%20%E6%96%B0%E4%B8%96%E7%95%8C%E7%B7%8F%E6%9C%AC%E5%BA%97%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E4%B8%B2%E3%81%8B%E3%81%A4%E3%81%A0%E3%82%8B%E3%81%BE%20%E6%96%B0%E4%B8%96%E7%95%8C%E7%B7%8F%E6%9C%AC%E5%BA%97%20%E5%A4%A7%E9%98%AA", "home": "https://www.kushikatu-daruma.com/", "price": 2500, "priceLabel": null}, {"day": "Day2 · 11/14(토)", "time": "14:00", "type": "관광", "priority": "-", "name": "츠텐카쿠 & 신세카이 거리", "addr": "나니와구 신세카이", "memo": "레트로 분위기, 사진 스팟 많음", "map": "https://www.google.com/maps/search/?api=1&query=%E9%80%9A%E5%A4%A9%E9%96%A3%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%80%9A%E5%A4%A9%E9%96%A3%20%E5%A4%A7%E9%98%AA", "home": "https://www.tsutenkaku.co.jp/", "price": 0, "priceLabel": "무료 · 전망대 선택 1,500엔(옥외 세트, 26.4~ 개정)"}, {"day": "Day2 · 11/14(토)", "time": "16:00", "type": "숙소", "priority": "-", "name": "숙소 복귀 & 휴식", "addr": "난바/신사이바시 숙소", "memo": "", "map": "https://www.google.com/maps/search/?api=1&query=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "home": "", "price": 0, "priceLabel": "무료"}, {"day": "Day2 · 11/14(토)", "time": "18:30", "type": "식사(저녁)", "priority": "대표", "name": "야키니쿠엔 닌구 히가시신사이바시점", "addr": "오사카시 주오구 히가시신사이바시 1-7-10 APA호텔 1F", "memo": "숯불 야키니쿠, 우설이 시그니처. 술 메뉴 다양.", "map": "https://www.google.com/maps/search/?api=1&query=%E7%84%BC%E8%82%89%E8%8B%91%E3%81%AB%E3%82%93%E3%81%90%20%E6%9D%B1%E5%BF%83%E6%96%8E%E6%A9%8B%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E7%84%BC%E8%82%89%E8%8B%91%E3%81%AB%E3%82%93%E3%81%90%20%E6%9D%B1%E5%BF%83%E6%96%8E%E6%A9%8B%20%E5%A4%A7%E9%98%AA", "home": "https://yakinikuenningu.owst.jp/", "price": 7000, "priceLabel": null}, {"day": "Day2 · 11/14(토)", "time": "20:30", "type": "술집(2차)", "priority": "대표", "name": "365사카바", "addr": "난바", "memo": "생맥주 200엔대, 현지인 단골 이자카야. 인당 1.5만원 선.", "map": "https://www.google.com/maps/search/?api=1&query=365%E9%85%92%E5%A0%B4%20%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=365%E9%85%92%E5%A0%B4%20%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "home": "", "price": 3500, "priceLabel": null}, {"day": "Day2 · 11/14(토)", "time": "20:30", "type": "술집(3차)", "priority": "대안", "name": "우라난바 스탠딩바 골목", "addr": "우라난바", "memo": "도톤보리에서 도보 이동 가능, 감성 있게 마무리", "map": "https://www.google.com/maps/search/?api=1&query=%E8%A3%8F%E3%81%AA%E3%82%93%E3%81%B0%20%E7%AB%8B%E3%81%A1%E9%A3%B2%E3%81%BF%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E8%A3%8F%E3%81%AA%E3%82%93%E3%81%B0%20%E7%AB%8B%E3%81%A1%E9%A3%B2%E3%81%BF%20%E5%A4%A7%E9%98%AA", "home": "", "price": 3000, "priceLabel": null}, {"day": "Day3 · 11/15(일)", "time": "08:30", "type": "식사(아침)", "priority": "-", "name": "숙소 근처 아침", "addr": "난바/신사이바시 숙소 인근", "memo": "가볍게", "map": "https://www.google.com/maps/search/?api=1&query=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "home": "", "price": 900, "priceLabel": null}, {"day": "Day3 · 11/15(일)", "time": "09:30", "type": "쇼핑", "priority": "-", "name": "마지막 쇼핑", "addr": "구로몬시장 또는 신사이바시 상점가", "memo": "", "map": "https://www.google.com/maps/search/?api=1&query=%E5%BF%83%E6%96%8E%E6%A9%8B%E7%AD%8B%E5%95%86%E5%BA%97%E8%A1%97%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E5%BF%83%E6%96%8E%E6%A9%8B%E7%AD%8B%E5%95%86%E5%BA%97%E8%A1%97%20%E5%A4%A7%E9%98%AA", "home": "", "price": null, "priceLabel": "개인 예산"}, {"day": "Day3 · 11/15(일)", "time": "11:30", "type": "숙소", "priority": "-", "name": "숙소 체크아웃", "addr": "난바/신사이바시 숙소", "memo": "", "map": "https://www.google.com/maps/search/?api=1&query=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E3%81%AA%E3%82%93%E3%81%B0%20%E5%A4%A7%E9%98%AA", "home": "", "price": 0, "priceLabel": "무료"}, {"day": "Day3 · 11/15(일)", "time": "12:00", "type": "식사(점심)", "priority": "대표", "name": "킨류라멘 도톤보리점", "addr": "도톤보리", "memo": "돈코츠 베이스, 토핑(마늘·부추·김치) 무제한. 빠르게 든든히.", "map": "https://www.google.com/maps/search/?api=1&query=%E9%87%91%E9%BE%8D%E3%83%A9%E3%83%BC%E3%83%A1%E3%83%B3%20%E9%81%93%E9%A0%93%E5%A0%80%E5%BA%97%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%87%91%E9%BE%8D%E3%83%A9%E3%83%BC%E3%83%A1%E3%83%B3%20%E9%81%93%E9%A0%93%E5%A0%80%E5%BA%97%20%E5%A4%A7%E9%98%AA", "home": "https://kinryuramen.com/", "price": 900, "priceLabel": null}, {"day": "Day3 · 11/15(일)", "time": "13:00", "type": "이동", "priority": "-", "name": "라피트 특급 탑승", "addr": "난바역", "memo": "난바역 → 간사이공항, 환승없음·약 40분", "map": "https://www.google.com/maps/search/?api=1&query=%E9%9B%A3%E6%B3%A2%E9%A7%85%20%E5%A4%A7%E9%98%AA", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%9B%A3%E6%B3%A2%E9%A7%85%20%E5%A4%A7%E9%98%AA", "home": "", "price": 1670, "priceLabel": null}, {"day": "Day3 · 11/15(일)", "time": "13:45", "type": "이동", "priority": "-", "name": "공항 수속", "addr": "간사이국제공항", "memo": "", "map": "https://www.google.com/maps/search/?api=1&query=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "home": "https://www.kansai-airport.or.jp/", "price": null, "priceLabel": null}, {"day": "Day3 · 11/15(일)", "time": "16:00", "type": "이동", "priority": "-", "name": "오사카 출발", "addr": "간사이국제공항", "memo": "김포행", "map": "https://www.google.com/maps/search/?api=1&query=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF", "home": "", "price": null, "priceLabel": null}];
+// ---------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------
+const GH_OWNER = 'geonul22';
+const GH_REPO = 'osaka-trip-2026';
+const GH_BRANCH = 'main';
+const DATA_PATH = 'itinerary-data.json';
 
-const BUDGET = {
-  items: [
-    {cat:"교통", name:"난카이 공항급행 (간사이공항→난바, Day1)", price:970, note:"편도 · 26.4월 개정(구 930엔) · 라피트 이용 시 1,670엔"},
-    {cat:"교통", name:"라피트 특급 (난바→간사이공항, Day3)", price:1670, note:"편도 · 26.4월 특급료 인상(구 1,450엔), 티켓리스 구매 시 1,520엔"},
-    {cat:"교통", name:"시내 지하철/이동 (평균 4회)", price:920, note:"도톤보리·오사카성·신세카이 등"},
-    {cat:"입장료", name:"오사카성 텐슈카쿠", price:1200, note:"내부 관람 시 (선택) · 25.4월 인상(구 600엔)"},
-    {cat:"입장료", name:"츠텐카쿠 전망대", price:1500, note:"일반+옥외 세트 (선택) · 26.4월 개정(구 900엔)"},
-    {cat:"식사", name:"Day1 점심 · 우나기노 나카쇼", price:4500, note:"추정가"},
-    {cat:"식사", name:"Day1 저녁 · 오코노미야키(치보)", price:2200, note:"종합 오코노미야키"},
-    {cat:"식사", name:"Day1 술집 · 토리키조쿠", price:3000, note:"꼬치+음료"},
-    {cat:"식사", name:"Day2 아침 · 숙소 근처", price:900, note:""},
-    {cat:"식사", name:"Day2 점심 · 쿠시카츠 다루마", price:2500, note:""},
-    {cat:"식사", name:"Day2 저녁 · 야키니쿠엔 닌구", price:7000, note:"프리미엄, 변동폭 큼"},
-    {cat:"식사", name:"Day2 술집 · 365사카바", price:3500, note:""},
-    {cat:"식사", name:"Day3 아침 · 숙소 근처", price:900, note:""},
-    {cat:"식사", name:"Day3 점심 · 킨류라멘", price:900, note:"기본 라멘 1杯 기준"},
-  ],
-  notes: [
-    "숙박비·항공권(김포↔간사이)은 별도 예약이라 포함하지 않았어요.",
-    "술집은 1차 기준이에요. 2~3차 이어지면 추가로 잡아두세요.",
-    "짐 보관 코인로커: 1개당 500~700엔",
-    "포켓와이파이 공유 시 1인 약 1,500~2,500엔 (3박 기준)",
-    "여행자보험: 인당 몇 천 원대",
-    "쇼핑 예산은 개인 편차가 커서 별도 산정 필요",
-    "일본은 기본 무팁 문화라 팁 예산은 없어도 됩니다",
-    "가격 최종 확인일: 2026.08.14 (교통비·오사카성/츠텐카쿠 입장료는 공식 요금 기준, 식당가는 추정치)",
-  ]
+const CLOUDINARY_CLOUD = 'p9iuxejh';
+const CLOUDINARY_PRESET = 'osaka-trip';
+const FIRESTORE_PROJECT = 'osaka-trip-2026-6a2a4';
+
+// ---------------------------------------------------------------
+// State
+// ---------------------------------------------------------------
+let DATA = [];
+let BUDGET = { items: [], notes: [] };
+let PHOTOS = {}; // itemId -> [{url, createdAt}]
+let activeIdx = 0;
+let hasUnsaved = false;
+
+const ICONS = {
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13"/><path d="M15 7v13"/></svg>',
+  dir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>',
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
+  camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
 };
 
-const CAT_COLOR = { "교통":"var(--move)", "입장료":"var(--sight)", "식사":"var(--food)" };
+const CAT_COLOR = { "교통":"var(--move)", "입장료":"var(--sight)", "식사":"var(--food)", "기타":"var(--shop)" };
 
 const CATS = {
-
   "이동":  { color: "var(--move)",  label:"이동" },
   "식사":  { color: "var(--food)",  label:"식사" },
   "관광":  { color: "var(--sight)", label:"관광" },
@@ -314,183 +483,235 @@ function formatMins(mins){
   return `${m}분 후`;
 }
 
-const ICONS = {
-  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13"/><path d="M15 7v13"/></svg>',
-  dir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>',
-  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
-};
+function genId(prefix){
+  return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
 
-const days = [...new Set(DATA.map(d => d.day))];
+function toast(msg, ms=2400){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._h);
+  toast._h = setTimeout(()=> t.classList.remove('show'), ms);
+}
 
+// ---------------------------------------------------------------
+// Photo row rendering
+// ---------------------------------------------------------------
+function photoRowHtml(itemId){
+  const photos = PHOTOS[itemId] || [];
+  const thumbs = photos.map(p => `<img class="photo-thumb" src="${p.url}" data-full="${p.url}" loading="lazy" alt="여행 사진">`).join('');
+  return `<div class="photo-row" data-item-id="${itemId}">${thumbs}<button class="photo-add" type="button" data-item-id="${itemId}" title="사진 추가">${ICONS.camera}</button></div>`;
+}
+
+// ---------------------------------------------------------------
+// Main render
+// ---------------------------------------------------------------
 const tabsEl = document.getElementById('tabs');
 const panelsEl = document.getElementById('panels');
 
-days.forEach((day, i) => {
-  const [label, date] = day.split(' · ');
-  const tab = document.createElement('div');
-  tab.className = 'tab' + (i===0 ? ' active' : '');
-  tab.dataset.idx = i;
-  tab.innerHTML = `<span class="d">${label}</span>${date}`;
-  tab.onclick = () => selectDay(i);
-  tabsEl.appendChild(tab);
+function renderAll(){
+  tabsEl.innerHTML = '';
+  panelsEl.innerHTML = '';
 
-  const items = DATA.filter(d => d.day === day);
-  const panel = document.createElement('div');
-  panel.className = 'day-panel' + (i===0 ? ' active' : '');
-  panel.dataset.idx = i;
+  const days = [...new Set(DATA.map(d => d.day))];
 
-  const meta = document.createElement('div');
-  meta.className = 'day-meta';
-  meta.innerHTML = `<b>${date}</b><span>일정 ${items.length}건</span>`;
-  panel.appendChild(meta);
+  days.forEach((day, i) => {
+    const [label, date] = day.split(' · ');
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (i === activeIdx ? ' active' : '');
+    tab.dataset.idx = i;
+    tab.innerHTML = `<span class="d">${label}</span>${date || ''}`;
+    tab.onclick = () => selectDay(i);
+    tabsEl.appendChild(tab);
 
-  const tl = document.createElement('div');
-  tl.className = 'timeline';
+    const items = DATA.filter(d => d.day === day);
+    const panel = document.createElement('div');
+    panel.className = 'day-panel' + (i === activeIdx ? ' active' : '');
+    panel.dataset.idx = i;
 
-  items.forEach((item, idx) => {
-    if(idx > 0){
-      const mins = minutesBetween(items[idx-1].time, item.time);
-      if(mins !== null && mins > 0){
-        const gap = document.createElement('div');
-        gap.className = 'gap';
-        gap.innerHTML = `<span class="glabel">${formatMins(mins)}</span>`;
-        tl.appendChild(gap);
+    const meta = document.createElement('div');
+    meta.className = 'day-meta';
+    meta.innerHTML = `<b>${date || ''}</b><span>일정 ${items.length}건</span>`;
+    panel.appendChild(meta);
+
+    const tl = document.createElement('div');
+    tl.className = 'timeline';
+
+    items.forEach((item, idx) => {
+      if(idx > 0){
+        const mins = minutesBetween(items[idx-1].time, item.time);
+        if(mins !== null && mins > 0){
+          const gap = document.createElement('div');
+          gap.className = 'gap';
+          gap.innerHTML = `<span class="glabel">${formatMins(mins)}</span>`;
+          tl.appendChild(gap);
+        }
       }
-    }
-    const key = catKey(item.type);
-    const cat = CATS[key];
-    const isAlt = item.priority === '대안';
-    const stop = document.createElement('div');
-    stop.className = 'stop' + (isAlt ? ' alt' : '');
-    stop.style.setProperty('--dot-color', cat.color);
+      const key = catKey(item.type);
+      const cat = CATS[key];
+      const isAlt = item.priority === '대안';
 
-    let tagHtml = '';
-    if(item.priority === '대표') tagHtml = '<span class="tag">대표</span>';
-    else if(item.priority === '대안') tagHtml = '<span class="tag alt">대안</span>';
+      const stop = document.createElement('div');
+      stop.className = 'stop' + (isAlt ? ' alt' : '');
+      stop.style.setProperty('--dot-color', cat.color);
 
-    let priceHtml = '';
-    if(item.price !== null && item.price !== undefined){
-      if(item.price === 0){
-        priceHtml = `<span class="price-chip free">${item.priceLabel || '무료'}</span>`;
-      } else {
-        priceHtml = `<span class="price-chip">1인 ¥${item.price.toLocaleString()}</span>`;
+      let tagHtml = '';
+      if(item.priority === '대표') tagHtml = '<span class="tag">대표</span>';
+      else if(item.priority === '대안') tagHtml = '<span class="tag alt">대안</span>';
+
+      let priceHtml = '';
+      if(item.price !== null && item.price !== undefined){
+        if(item.price === 0){
+          priceHtml = `<span class="price-chip free">${item.priceLabel || '무료'}</span>`;
+        } else {
+          priceHtml = `<span class="price-chip">1인 ¥${item.price.toLocaleString()}</span>`;
+        }
+      } else if(item.priceLabel){
+        priceHtml = `<span class="price-chip free">${item.priceLabel}</span>`;
       }
-    } else if(item.priceLabel){
-      priceHtml = `<span class="price-chip free">${item.priceLabel}</span>`;
-    }
 
-    let linksHtml = `<a class="lnk primary" href="${item.map}" target="_blank" rel="noopener">${ICONS.map}지도</a>`;
-    linksHtml += `<a class="lnk" href="${item.dir}" target="_blank" rel="noopener">${ICONS.dir}길찾기</a>`;
-    if(item.home){ linksHtml += `<a class="lnk" href="${item.home}" target="_blank" rel="noopener">${ICONS.home}홈페이지</a>`; }
+      let linksHtml = `<a class="lnk primary" href="${item.map}" target="_blank" rel="noopener">${ICONS.map}지도</a>`;
+      linksHtml += `<a class="lnk" href="${item.dir}" target="_blank" rel="noopener">${ICONS.dir}길찾기</a>`;
+      if(item.home){ linksHtml += `<a class="lnk" href="${item.home}" target="_blank" rel="noopener">${ICONS.home}홈페이지</a>`; }
 
-    stop.innerHTML = `
-      <div class="time">${item.time}</div>
-      <div class="dot"></div>
-      <div class="card">
-        <div class="card-top">
-          <span class="badge">${item.type}</span>
-          ${tagHtml}
-          ${priceHtml}
+      const adminBtns = `<div class="card-admin-btns admin-only flex">
+        <button type="button" class="icon-btn edit-item-btn" data-id="${item.id}" title="수정">✎</button>
+        <button type="button" class="icon-btn danger del-item-btn" data-id="${item.id}" title="삭제">✕</button>
+      </div>`;
+
+      stop.innerHTML = `
+        <div class="time">${item.time}</div>
+        <div class="dot"></div>
+        <div class="card">
+          <div class="card-top">
+            <span class="badge">${item.type}</span>
+            ${tagHtml}
+            ${priceHtml}
+            ${adminBtns}
+          </div>
+          <div class="name">${item.name}</div>
+          <div class="addr">${item.addr}</div>
+          ${item.memo ? `<div class="memo">${item.memo}</div>` : ''}
+          <div class="links">${linksHtml}</div>
+          ${photoRowHtml(item.id)}
         </div>
-        <div class="name">${item.name}</div>
-        <div class="addr">${item.addr}</div>
-        ${item.memo ? `<div class="memo">${item.memo}</div>` : ''}
-        <div class="links">${linksHtml}</div>
-      </div>
-    `;
-    tl.appendChild(stop);
+      `;
+      tl.appendChild(stop);
+    });
+
+    panel.appendChild(tl);
+
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'add-item-btn admin-only block';
+    addBtn.textContent = '+ 이 날짜에 일정 추가';
+    addBtn.onclick = () => openItemModal(null, day);
+    panel.appendChild(addBtn);
+
+    const legend = document.createElement('div');
+    legend.className = 'legend';
+    legend.innerHTML = Object.values(CATS).map(c =>
+      `<span><i style="background:${c.color}"></i>${c.label}</span>`
+    ).join('');
+    panel.appendChild(legend);
+
+    panelsEl.appendChild(panel);
   });
 
-  panel.appendChild(tl);
+  // Budget tab
+  const budgetIdx = days.length;
+  const bTab = document.createElement('div');
+  bTab.className = 'tab' + (activeIdx === budgetIdx ? ' active' : '');
+  bTab.dataset.idx = budgetIdx;
+  bTab.innerHTML = `<span class="d">예산</span>1인/6인`;
+  bTab.onclick = () => selectDay(budgetIdx);
+  tabsEl.appendChild(bTab);
 
-  const legend = document.createElement('div');
-  legend.className = 'legend';
-  legend.innerHTML = Object.values(CATS).map(c =>
-    `<span><i style="background:${c.color}"></i>${c.label}</span>`
-  ).join('');
-  panel.appendChild(legend);
+  const bPanel = document.createElement('div');
+  bPanel.className = 'day-panel' + (activeIdx === budgetIdx ? ' active' : '');
+  bPanel.dataset.idx = budgetIdx;
 
-  panelsEl.appendChild(panel);
-});
+  const total1 = BUDGET.items.reduce((s,i) => s + (i.price || 0), 0);
+  const total6 = total1 * 6;
 
-// Budget tab
-const budgetIdx = days.length;
-const bTab = document.createElement('div');
-bTab.className = 'tab';
-bTab.dataset.idx = budgetIdx;
-bTab.innerHTML = `<span class="d">예산</span>1인/6인`;
-bTab.onclick = () => selectDay(budgetIdx);
-tabsEl.appendChild(bTab);
-
-const bPanel = document.createElement('div');
-bPanel.className = 'day-panel';
-bPanel.dataset.idx = budgetIdx;
-
-const total1 = BUDGET.items.reduce((s,i) => s + i.price, 0);
-const total6 = total1 * 6;
-
-const summary = document.createElement('div');
-summary.className = 'budget-summary';
-summary.innerHTML = `
-  <div class="bs-row">
-    <div class="bs-label">1인 예상 총액</div>
-    <div class="bs-value">¥${total1.toLocaleString()}</div>
-  </div>
-  <div class="bs-row">
-    <div class="bs-label">6인 예상 총액</div>
-    <div class="bs-value">¥${total6.toLocaleString()}</div>
-  </div>
-`;
-bPanel.appendChild(summary);
-
-const cats = ["교통","입장료","식사"];
-cats.forEach(cat => {
-  const catItems = BUDGET.items.filter(i => i.cat === cat);
-  const subtotal = catItems.reduce((s,i) => s + i.price, 0);
-
-  const section = document.createElement('div');
-  section.className = 'budget-section';
-  section.innerHTML = `
-    <div class="bsec-head">
-      <span class="badge" style="background:${CAT_COLOR[cat]}">${cat}</span>
-      <span class="bsec-sub">소계 ¥${subtotal.toLocaleString()}</span>
+  const summary = document.createElement('div');
+  summary.className = 'budget-summary';
+  summary.innerHTML = `
+    <div class="bs-row">
+      <div class="bs-label">1인 예상 총액</div>
+      <div class="bs-value">¥${total1.toLocaleString()}</div>
+    </div>
+    <div class="bs-row">
+      <div class="bs-label">6인 예상 총액</div>
+      <div class="bs-value">¥${total6.toLocaleString()}</div>
     </div>
   `;
-  catItems.forEach(item => {
-    const row = document.createElement('div');
-    row.className = 'budget-row';
-    row.innerHTML = `
-      <div class="br-name">${item.name}${item.note ? `<span class="br-note">${item.note}</span>` : ''}</div>
-      <div class="br-price">¥${item.price.toLocaleString()}</div>
+  bPanel.appendChild(summary);
+
+  const addBudgetBtn = document.createElement('button');
+  addBudgetBtn.type = 'button';
+  addBudgetBtn.className = 'add-item-btn admin-only block';
+  addBudgetBtn.textContent = '+ 예산 항목 추가';
+  addBudgetBtn.onclick = () => openBudgetModal(null);
+  bPanel.appendChild(addBudgetBtn);
+
+  const catsPresent = [...new Set(BUDGET.items.map(i => i.cat))];
+  catsPresent.forEach(cat => {
+    const catItems = BUDGET.items.filter(i => i.cat === cat);
+    const subtotal = catItems.reduce((s,i) => s + (i.price || 0), 0);
+
+    const section = document.createElement('div');
+    section.className = 'budget-section';
+    section.innerHTML = `
+      <div class="bsec-head">
+        <span class="badge" style="background:${CAT_COLOR[cat] || 'var(--shop)'}">${cat}</span>
+        <span class="bsec-sub">소계 ¥${subtotal.toLocaleString()}</span>
+      </div>
     `;
-    section.appendChild(row);
+    catItems.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'budget-row';
+      row.innerHTML = `
+        <div class="br-name">${item.name}${item.note ? `<span class="br-note">${item.note}</span>` : ''}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="br-price">¥${(item.price||0).toLocaleString()}</div>
+          <div class="admin-only flex" style="gap:4px;">
+            <button type="button" class="icon-btn edit-budget-btn" data-id="${item.id}" title="수정">✎</button>
+            <button type="button" class="icon-btn danger del-budget-btn" data-id="${item.id}" title="삭제">✕</button>
+          </div>
+        </div>
+      `;
+      section.appendChild(row);
+    });
+    bPanel.appendChild(section);
   });
-  bPanel.appendChild(section);
-});
 
-const notesCard = document.createElement('div');
-notesCard.className = 'budget-notes';
-notesCard.innerHTML = `<div class="bn-title">추가로 고려할 것</div>` +
-  BUDGET.notes.map(n => `<div class="bn-item">${n}</div>`).join('');
-bPanel.appendChild(notesCard);
+  const notesCard = document.createElement('div');
+  notesCard.className = 'budget-notes';
+  notesCard.innerHTML = `<div class="bn-title">추가로 고려할 것</div>` +
+    BUDGET.notes.map(n => `<div class="bn-item">${n}</div>`).join('');
+  bPanel.appendChild(notesCard);
 
-panelsEl.appendChild(bPanel);
+  panelsEl.appendChild(bPanel);
 
+  // 숙소 & 준비 체크리스트 탭
+  const stayIdx = budgetIdx + 1;
+  const sTab = document.createElement('div');
+  sTab.className = 'tab' + (activeIdx === stayIdx ? ' active' : '');
+  sTab.dataset.idx = stayIdx;
+  sTab.innerHTML = `<span class="d">숙소</span>D-day`;
+  sTab.onclick = () => selectDay(stayIdx);
+  tabsEl.appendChild(sTab);
 
-// 숙소 & 준비 체크리스트 탭
-const stayIdx = budgetIdx + 1;
-const sTab = document.createElement('div');
-sTab.className = 'tab';
-sTab.dataset.idx = stayIdx;
-sTab.innerHTML = `<span class="d">숙소</span>D-day`;
-sTab.onclick = () => selectDay(stayIdx);
-tabsEl.appendChild(sTab);
+  const sPanel = document.createElement('div');
+  sPanel.className = 'day-panel' + (activeIdx === stayIdx ? ' active' : '');
+  sPanel.dataset.idx = stayIdx;
+  sPanel.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:30px 0;">불러오는 중…</div>`;
+  panelsEl.appendChild(sPanel);
 
-const sPanel = document.createElement('div');
-sPanel.className = 'day-panel';
-sPanel.dataset.idx = stayIdx;
-sPanel.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:30px 0;">불러오는 중…</div>`;
-panelsEl.appendChild(sPanel);
+  loadStayPanel(sPanel);
+}
 
 function ddayInfo(targetDateStr){
   const today = new Date(); today.setHours(0,0,0,0);
@@ -505,58 +726,395 @@ function ddayInfo(targetDateStr){
   return { diffDays, cls, label };
 }
 
-fetch('notify-data.json').then(r => r.json()).then(data => {
-  let html = '';
+function loadStayPanel(sPanel){
+  fetch('notify-data.json').then(r => r.json()).then(data => {
+    let html = '';
 
-  html += `<div class="section-title">숙소 후보 · 예약 현황</div>`;
-  const stays = [...data.stays].sort((a,b) => new Date(a.free_cancel_deadline) - new Date(b.free_cancel_deadline));
-  stays.forEach(stay => {
-    const fc = ddayInfo(stay.free_cancel_deadline);
-    const statusClass = stay.status === '예약완료' ? '' : 'candidate';
-    html += `
-      <div class="stay-card">
-        <div class="stay-top">
-          <span class="stay-status ${statusClass}">${stay.status}</span>
-          <span class="dday-badge ${fc.cls}">무료취소 ${fc.label}</span>
+    html += `<div class="section-title">숙소 후보 · 예약 현황</div>`;
+    const stays = [...data.stays].sort((a,b) => new Date(a.free_cancel_deadline) - new Date(b.free_cancel_deadline));
+    stays.forEach(stay => {
+      const fc = ddayInfo(stay.free_cancel_deadline);
+      const statusClass = stay.status === '예약완료' ? '' : 'candidate';
+      html += `
+        <div class="stay-card">
+          <div class="stay-top">
+            <span class="stay-status ${statusClass}">${stay.status}</span>
+            <span class="dday-badge ${fc.cls}">무료취소 ${fc.label}</span>
+          </div>
+          <div class="stay-name">${stay.name}</div>
+          <div class="stay-dates">${stay.checkin} ~ ${stay.checkout}${stay.price_display ? ` · ${stay.price_display}` : ''}</div>
+          <div class="stay-row"><span>무료취소 마감</span><span>${stay.free_cancel_deadline}</span></div>
+          ${stay.note ? `<div class="stay-note">${stay.note}</div>` : ''}
+          ${stay.url ? `<div class="links" style="margin-top:8px;"><a class="lnk primary" href="${stay.url}" target="_blank" rel="noopener">에어비앤비 열기</a></div>` : ''}
         </div>
-        <div class="stay-name">${stay.name}</div>
-        <div class="stay-dates">${stay.checkin} ~ ${stay.checkout}${stay.price_display ? ` · ${stay.price_display}` : ''}</div>
-        <div class="stay-row"><span>무료취소 마감</span><span>${stay.free_cancel_deadline}</span></div>
-        ${stay.note ? `<div class="stay-note">${stay.note}</div>` : ''}
-        ${stay.url ? `<div class="links" style="margin-top:8px;"><a class="lnk primary" href="${stay.url}" target="_blank" rel="noopener">에어비앤비 열기</a></div>` : ''}
-      </div>
-    `;
+      `;
+    });
+
+    html += `<div class="section-title">여행 준비 체크리스트</div>`;
+    const tripStart = data.trip_start;
+    const items = data.checklist.map(it => {
+      const d = new Date(tripStart + 'T00:00:00');
+      d.setDate(d.getDate() - it.days_before);
+      const dateStr = d.toISOString().slice(0,10);
+      return { ...it, dateStr };
+    }).sort((a,b) => new Date(a.dateStr) - new Date(b.dateStr));
+
+    items.forEach(it => {
+      const info = ddayInfo(it.dateStr);
+      html += `
+        <div class="check-row ${info.diffDays < 0 ? 'done' : ''}">
+          <div class="check-name">${it.item}<span class="check-date">완료 권장일 ${it.dateStr}</span></div>
+          <span class="dday-badge ${info.cls}">${info.label}</span>
+        </div>
+      `;
+    });
+
+    sPanel.innerHTML = html;
+  }).catch(() => {
+    sPanel.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:30px 0;">숙소 정보를 불러오지 못했어요. notify-data.json을 확인해주세요.</div>`;
   });
-
-  html += `<div class="section-title">여행 준비 체크리스트</div>`;
-  const tripStart = data.trip_start;
-  const items = data.checklist.map(it => {
-    const d = new Date(tripStart + 'T00:00:00');
-    d.setDate(d.getDate() - it.days_before);
-    const dateStr = d.toISOString().slice(0,10);
-    return { ...it, dateStr };
-  }).sort((a,b) => new Date(a.dateStr) - new Date(b.dateStr));
-
-  items.forEach(it => {
-    const info = ddayInfo(it.dateStr);
-    html += `
-      <div class="check-row ${info.diffDays < 0 ? 'done' : ''}">
-        <div class="check-name">${it.item}<span class="check-date">완료 권장일 ${it.dateStr}</span></div>
-        <span class="dday-badge ${info.cls}">${info.label}</span>
-      </div>
-    `;
-  });
-
-  sPanel.innerHTML = html;
-}).catch(() => {
-  sPanel.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:30px 0;">숙소 정보를 불러오지 못했어요. notify-data.json을 확인해주세요.</div>`;
-});
+}
 
 function selectDay(i){
+  activeIdx = i;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', +t.dataset.idx === i));
   document.querySelectorAll('.day-panel').forEach(p => p.classList.toggle('active', +p.dataset.idx === i));
   window.scrollTo({top:0, behavior:'smooth'});
 }
+
+// ---------------------------------------------------------------
+// Photos: Cloudinary upload + Firestore metadata
+// ---------------------------------------------------------------
+async function loadPhotos(){
+  try{
+    const res = await fetch(`https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/photos?pageSize=500`);
+    if(!res.ok) return {};
+    const data = await res.json();
+    const map = {};
+    (data.documents || []).forEach(doc => {
+      const f = doc.fields || {};
+      const itemId = f.itemId && f.itemId.stringValue;
+      const url = f.url && f.url.stringValue;
+      const createdAt = (f.createdAt && f.createdAt.timestampValue) || doc.createTime;
+      if(!itemId || !url) return;
+      (map[itemId] = map[itemId] || []).push({ url, createdAt });
+    });
+    Object.values(map).forEach(arr => arr.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt)));
+    return map;
+  }catch(e){
+    return {};
+  }
+}
+
+async function uploadPhoto(itemId, file){
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:'POST', body: fd });
+  if(!res.ok) throw new Error('Cloudinary upload failed');
+  const data = await res.json();
+  const url = data.secure_url;
+
+  if(!localStorage.getItem('uploader_asked')){
+    const name = prompt('사진 올릴 때 표시할 이름을 알려주세요 (안 적어도 괜찮아요)');
+    localStorage.setItem('uploader_asked', '1');
+    if(name) localStorage.setItem('uploader_name', name);
+  }
+  const uploader = localStorage.getItem('uploader_name') || '';
+
+  await fetch(`https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/photos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: {
+      itemId: { stringValue: itemId },
+      url: { stringValue: url },
+      createdAt: { timestampValue: new Date().toISOString() },
+      uploader: { stringValue: uploader },
+    }})
+  });
+
+  return url;
+}
+
+let pendingUploadItemId = null;
+const photoInput = document.getElementById('photoInput');
+
+photoInput.addEventListener('change', async () => {
+  const file = photoInput.files[0];
+  photoInput.value = '';
+  if(!file || !pendingUploadItemId) return;
+  const itemId = pendingUploadItemId;
+  const row = document.querySelector(`.photo-row[data-item-id="${itemId}"]`);
+  const addBtn = row ? row.querySelector('.photo-add') : null;
+  if(addBtn){ addBtn.disabled = true; addBtn.textContent = '…'; }
+  try{
+    const url = await uploadPhoto(itemId, file);
+    (PHOTOS[itemId] = PHOTOS[itemId] || []).push({ url, createdAt: new Date().toISOString() });
+    if(row && addBtn){
+      const img = document.createElement('img');
+      img.className = 'photo-thumb';
+      img.loading = 'lazy';
+      img.src = url;
+      img.dataset.full = url;
+      row.insertBefore(img, addBtn);
+    }
+    toast('사진이 올라갔어요');
+  }catch(err){
+    toast('사진 업로드에 실패했어요. 다시 시도해주세요.');
+  }finally{
+    if(addBtn){ addBtn.disabled = false; addBtn.innerHTML = ICONS.camera; }
+  }
+});
+
+document.addEventListener('click', (e) => {
+  const addBtn = e.target.closest('.photo-add');
+  if(addBtn){ pendingUploadItemId = addBtn.dataset.itemId; photoInput.click(); return; }
+
+  const thumb = e.target.closest('.photo-thumb');
+  if(thumb){ openLightbox(thumb.dataset.full); return; }
+
+  const editItemBtn = e.target.closest('.edit-item-btn');
+  if(editItemBtn){ openItemModal(editItemBtn.dataset.id); return; }
+
+  const delItemBtn = e.target.closest('.del-item-btn');
+  if(delItemBtn){ deleteItem(delItemBtn.dataset.id); return; }
+
+  const editBudgetBtn = e.target.closest('.edit-budget-btn');
+  if(editBudgetBtn){ openBudgetModal(editBudgetBtn.dataset.id); return; }
+
+  const delBudgetBtn = e.target.closest('.del-budget-btn');
+  if(delBudgetBtn){ deleteBudgetItem(delBudgetBtn.dataset.id); return; }
+});
+
+function openLightbox(url){
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightbox').classList.add('show');
+}
+document.getElementById('lightbox').addEventListener('click', () => {
+  document.getElementById('lightbox').classList.remove('show');
+});
+
+// ---------------------------------------------------------------
+// Admin mode
+// ---------------------------------------------------------------
+document.getElementById('adminToggle').addEventListener('click', () => {
+  if(document.body.classList.contains('admin-mode')){
+    document.body.classList.remove('admin-mode');
+    return;
+  }
+  let pat = localStorage.getItem('gh_pat');
+  if(!pat){
+    pat = prompt('GitHub Personal Access Token을 입력하세요 (repo 권한 필요, 이 기기에만 저장돼요)');
+    if(!pat) return;
+    localStorage.setItem('gh_pat', pat.trim());
+  }
+  document.body.classList.add('admin-mode');
+});
+
+function markUnsaved(){
+  hasUnsaved = true;
+  document.getElementById('saveBar').classList.remove('hidden');
+}
+
+document.getElementById('saveBarBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('saveBarBtn');
+  btn.disabled = true;
+  btn.textContent = '저장 중…';
+  try{
+    await githubSaveFile(DATA_PATH, { days: DATA, budget: BUDGET }, '일정 업데이트');
+    hasUnsaved = false;
+    document.getElementById('saveBar').classList.add('hidden');
+    toast('저장했어요! 1분 내로 반영돼요');
+  }catch(err){
+    toast('저장 실패: ' + err.message);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'GitHub에 저장';
+  }
+});
+
+async function githubSaveFile(path, obj, message){
+  const pat = localStorage.getItem('gh_pat');
+  if(!pat) throw new Error('토큰이 없어요');
+  const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${encodeURIComponent(path)}`;
+
+  const getRes = await fetch(url, {
+    headers: { Authorization: `token ${pat}`, Accept: 'application/vnd.github+json' }
+  });
+  if(!getRes.ok) throw new Error('파일 정보를 가져오지 못했어요 (토큰 확인 필요)');
+  const getData = await getRes.json();
+  const sha = getData.sha;
+
+  const jsonStr = JSON.stringify(obj, null, 2);
+  const content = btoa(unescape(encodeURIComponent(jsonStr)));
+
+  const putRes = await fetch(url, {
+    method: 'PUT',
+    headers: { Authorization: `token ${pat}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, content, sha, branch: GH_BRANCH })
+  });
+  if(!putRes.ok){
+    const err = await putRes.json().catch(() => ({}));
+    throw new Error(err.message || '저장에 실패했어요');
+  }
+  return true;
+}
+
+// ---------------------------------------------------------------
+// Item add/edit/delete
+// ---------------------------------------------------------------
+let editingItemId = null;
+
+function openItemModal(id, dayForNew){
+  editingItemId = id;
+  const modal = document.getElementById('itemModal');
+  const title = document.getElementById('itemModalTitle');
+  if(id){
+    const item = DATA.find(d => d.id === id);
+    if(!item) return;
+    title.textContent = '일정 수정';
+    document.getElementById('f-day').value = item.day;
+    document.getElementById('f-time').value = item.time;
+    document.getElementById('f-type').value = item.type;
+    document.getElementById('f-priority').value = item.priority || '-';
+    document.getElementById('f-name').value = item.name;
+    document.getElementById('f-addr').value = item.addr;
+    document.getElementById('f-memo').value = item.memo || '';
+    document.getElementById('f-home').value = item.home || '';
+    document.getElementById('f-price').value = (item.price === null || item.price === undefined) ? '' : item.price;
+    document.getElementById('f-priceLabel').value = item.priceLabel || '';
+  } else {
+    title.textContent = '일정 추가';
+    document.getElementById('f-day').value = dayForNew || '';
+    document.getElementById('f-time').value = '';
+    document.getElementById('f-type').value = '';
+    document.getElementById('f-priority').value = '-';
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-addr').value = '';
+    document.getElementById('f-memo').value = '';
+    document.getElementById('f-home').value = '';
+    document.getElementById('f-price').value = '';
+    document.getElementById('f-priceLabel').value = '';
+  }
+  modal.classList.add('show');
+}
+
+document.getElementById('itemModalCancel').addEventListener('click', () => {
+  document.getElementById('itemModal').classList.remove('show');
+});
+
+document.getElementById('itemModalSave').addEventListener('click', () => {
+  const day = document.getElementById('f-day').value.trim();
+  const time = document.getElementById('f-time').value.trim();
+  const name = document.getElementById('f-name').value.trim();
+  if(!day || !time || !name){ alert('날짜 그룹 · 시간 · 장소명은 필수예요'); return; }
+
+  const addr = document.getElementById('f-addr').value.trim();
+  const type = document.getElementById('f-type').value.trim() || '기타';
+  const priority = document.getElementById('f-priority').value;
+  const memo = document.getElementById('f-memo').value.trim();
+  const home = document.getElementById('f-home').value.trim();
+  const priceRaw = document.getElementById('f-price').value;
+  const price = priceRaw === '' ? null : Number(priceRaw);
+  const priceLabel = document.getElementById('f-priceLabel').value.trim();
+
+  const q = encodeURIComponent(addr || name);
+  const map = `https://www.google.com/maps/search/?api=1&query=${q}`;
+  const dir = `https://www.google.com/maps/dir/?api=1&destination=${q}`;
+
+  if(editingItemId){
+    const idx = DATA.findIndex(d => d.id === editingItemId);
+    if(idx > -1){
+      DATA[idx] = { ...DATA[idx], day, time, type, priority, name, addr, memo, home, price, priceLabel, map, dir };
+    }
+  } else {
+    DATA.push({ id: genId('i'), day, time, type, priority, name, addr, memo, home, price, priceLabel, map, dir });
+  }
+
+  document.getElementById('itemModal').classList.remove('show');
+  markUnsaved();
+  renderAll();
+});
+
+function deleteItem(id){
+  if(!confirm('이 일정을 삭제할까요?')) return;
+  DATA = DATA.filter(d => d.id !== id);
+  markUnsaved();
+  renderAll();
+}
+
+// ---------------------------------------------------------------
+// Budget add/edit/delete
+// ---------------------------------------------------------------
+let editingBudgetId = null;
+
+function openBudgetModal(id){
+  editingBudgetId = id;
+  const modal = document.getElementById('budgetModal');
+  const title = document.getElementById('budgetModalTitle');
+  if(id){
+    const item = BUDGET.items.find(b => b.id === id);
+    if(!item) return;
+    title.textContent = '예산 항목 수정';
+    document.getElementById('bf-cat').value = item.cat;
+    document.getElementById('bf-name').value = item.name;
+    document.getElementById('bf-price').value = item.price;
+    document.getElementById('bf-note').value = item.note || '';
+  } else {
+    title.textContent = '예산 항목 추가';
+    document.getElementById('bf-cat').value = '';
+    document.getElementById('bf-name').value = '';
+    document.getElementById('bf-price').value = '';
+    document.getElementById('bf-note').value = '';
+  }
+  modal.classList.add('show');
+}
+
+document.getElementById('budgetModalCancel').addEventListener('click', () => {
+  document.getElementById('budgetModal').classList.remove('show');
+});
+
+document.getElementById('budgetModalSave').addEventListener('click', () => {
+  const cat = document.getElementById('bf-cat').value.trim() || '기타';
+  const name = document.getElementById('bf-name').value.trim();
+  const priceRaw = document.getElementById('bf-price').value;
+  const price = priceRaw === '' ? 0 : Number(priceRaw);
+  const note = document.getElementById('bf-note').value.trim();
+  if(!name){ alert('이름은 필수예요'); return; }
+
+  if(editingBudgetId){
+    const idx = BUDGET.items.findIndex(b => b.id === editingBudgetId);
+    if(idx > -1){ BUDGET.items[idx] = { ...BUDGET.items[idx], cat, name, price, note }; }
+  } else {
+    BUDGET.items.push({ id: genId('b'), cat, name, price, note });
+  }
+
+  document.getElementById('budgetModal').classList.remove('show');
+  markUnsaved();
+  renderAll();
+});
+
+function deleteBudgetItem(id){
+  if(!confirm('이 예산 항목을 삭제할까요?')) return;
+  BUDGET.items = BUDGET.items.filter(b => b.id !== id);
+  markUnsaved();
+  renderAll();
+}
+
+// ---------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------
+Promise.all([
+  fetch(DATA_PATH).then(r => r.json()),
+  loadPhotos()
+]).then(([itinerary, photos]) => {
+  DATA = itinerary.days;
+  BUDGET = itinerary.budget;
+  PHOTOS = photos;
+  renderAll();
+}).catch(() => {
+  panelsEl.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:40px 20px;">일정 데이터를 불러오지 못했어요. itinerary-data.json을 확인해주세요.</div>`;
+});
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
