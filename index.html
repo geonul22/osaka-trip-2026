@@ -70,6 +70,43 @@
   }
   body.admin-mode .admin-toggle{ background: var(--amber-dim); border-color:var(--amber); color:var(--amber); }
 
+  .add-day-tab{ flex: 0 0 auto !important; padding-left:10px; padding-right:10px; color: var(--amber); }
+
+  .refresh-toggle{
+    position:absolute; top: calc(14px + env(safe-area-inset-top)); right:56px;
+    width:34px; height:34px; border-radius:50%;
+    background: var(--surface); border:1px solid var(--line); color:var(--muted);
+    display:flex; align-items:center; justify-content:center; font-size:17px;
+    cursor:pointer; transition: transform .5s ease;
+  }
+  .refresh-toggle.spin{ animation: spin .6s linear; }
+  @keyframes spin{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
+
+  .update-banner{
+    display:none; align-items:center; justify-content:center; gap:8px;
+    background: var(--amber-dim); color: var(--amber);
+    font-size:12.5px; font-weight:700; padding:9px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  .update-banner.show{ display:flex; }
+  .update-banner button{
+    background: var(--amber); color:#241a06; border:none; border-radius:6px;
+    padding:4px 10px; font-size:12px; font-weight:800; cursor:pointer;
+  }
+
+  .trip-switcher{
+    display:flex; gap:6px; overflow-x:auto; padding: 10px 12px 4px;
+    background: var(--bg-soft);
+  }
+  .trip-switcher.hidden{ display:none; }
+  .trip-chip{
+    flex:0 0 auto; padding:6px 13px; border-radius:999px;
+    background: var(--surface); border:1px solid var(--line); color:var(--muted);
+    font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
+  }
+  .trip-chip.active{ background: var(--amber-dim); border-color:var(--amber); color:var(--amber); }
+  .trip-chip.add-trip{ color: var(--amber); border-style:dashed; }
+
   .tabs{
     position: sticky; top:0; z-index: 20;
     display:flex; gap:0;
@@ -250,18 +287,30 @@
   .check-date{ display:block; font-size:10.5px; color:var(--muted); margin-top:2px; font-weight:400; }
 
   /* ---- Photos ---- */
-  .photo-row{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  .photo-row{
+    display:flex; gap:6px; align-items:center; margin-top:10px;
+    overflow-x:auto; overflow-y:hidden; flex-wrap:nowrap;
+    padding-bottom:2px; scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch;
+  }
+  .photo-row::-webkit-scrollbar{ height:5px; }
+  .photo-row::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px; }
   .photo-thumb{
-    width:52px; height:52px; object-fit:cover; border-radius:8px;
-    border:1px solid var(--line); cursor:pointer;
+    width:52px; height:52px; min-width:52px; object-fit:cover; border-radius:8px;
+    border:1px solid var(--line); cursor:pointer; scroll-snap-align:start;
   }
   .photo-add{
-    width:52px; height:52px; border-radius:8px;
+    width:52px; height:52px; min-width:52px; border-radius:8px;
     background: var(--surface-alt); border:1px dashed var(--line); color:var(--muted);
     font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
     cursor:pointer; text-align:center; line-height:1.3; padding:2px;
+    position:sticky; left:0; z-index:1;
   }
   .photo-add svg{ width:16px; height:16px; }
+  .photo-count{
+    font-size:10px; color:var(--muted); font-weight:700; min-width:28px;
+    text-align:center; flex-shrink:0;
+  }
 
   .lightbox-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:100;
@@ -375,11 +424,14 @@
 <body>
 
 <div class="hero">
-  <div class="eyebrow">OSAKA · 11.13 &ndash; 11.15</div>
-  <h1>오사카 3박4일 여행 노선도</h1>
-  <p>고등학교 친구 6인, 난바 · 신사이바시 숙소 기준. 날짜별로 탭을 눌러 확인하세요.</p>
+  <div class="eyebrow" id="heroEyebrow">OSAKA · 11.13 &ndash; 11.15</div>
+  <h1 id="heroTitle">오사카 3박4일 여행 노선도</h1>
+  <p id="heroDesc">고등학교 친구 6인, 난바 · 신사이바시 숙소 기준. 날짜별로 탭을 눌러 확인하세요.</p>
+  <button class="refresh-toggle" id="refreshBtn" title="새로고침">⟳</button>
   <button class="admin-toggle" id="adminToggle" title="관리자 모드">⚙</button>
 </div>
+<div class="update-banner" id="updateBanner">새 버전이 있어요 · <button type="button" id="updateBannerBtn">새로고침</button></div>
+<div class="trip-switcher" id="tripSwitcher"></div>
 
 <div class="tabs" id="tabs"></div>
 <div id="panels"></div>
@@ -471,7 +523,16 @@
 const GH_OWNER = 'geonul22';
 const GH_REPO = 'osaka-trip-2026';
 const GH_BRANCH = 'main';
-const DATA_PATH = 'itinerary-data.json';
+const TRIPS_INDEX_PATH = 'trips.json';
+// Fallback used only if trips.json can't be loaded yet (e.g. very first
+// deploy before it's been committed) — keeps the Osaka trip working.
+const DEFAULT_TRIP = {
+  id: 'osaka-2026',
+  dataFile: 'itinerary-data.json',
+  eyebrow: 'OSAKA · 11.13 – 11.15',
+  title: '오사카 3박4일 여행 노선도',
+  desc: '고등학교 친구 6인, 난바 · 신사이바시 숙소 기준. 날짜별로 탭을 눌러 확인하세요.'
+};
 
 const CLOUDINARY_CLOUD = 'p9iuxejh';
 const CLOUDINARY_PRESET = 'osaka-trip';
@@ -481,6 +542,8 @@ const FIREBASE_API_KEY = 'AIzaSyCqQ5IOKFRMHRQLRj_pvs1SFAJKACyN3GI';
 // ---------------------------------------------------------------
 // State
 // ---------------------------------------------------------------
+let TRIPS = [];       // [{id, dataFile, eyebrow, title, desc}]
+let currentTrip = null;
 let DATA = [];
 let BUDGET = { items: [], notes: [] };
 let PHOTOS = {}; // itemId -> [{url, name, ownerId, createdAt, publicId}]
@@ -547,7 +610,8 @@ function toast(msg, ms=2400){
 function photoRowHtml(itemId){
   const photos = PHOTOS[itemId] || [];
   const thumbs = photos.map(p => `<img class="photo-thumb" src="${p.url}" data-url="${p.url}" data-name="${p.name || ''}" data-owner="${p.ownerId || ''}" loading="lazy" alt="여행 사진">`).join('');
-  return `<div class="photo-row" data-item-id="${itemId}">${thumbs}<button class="photo-add" type="button" data-item-id="${itemId}" title="사진 추가">${ICONS.camera}</button></div>`;
+  const countBadge = photos.length > 4 ? `<span class="photo-count">${photos.length}장</span>` : '';
+  return `<div class="photo-row" data-item-id="${itemId}"><button class="photo-add" type="button" data-item-id="${itemId}" title="사진 추가">${ICONS.camera}</button>${thumbs}${countBadge}</div>`;
 }
 
 // ---------------------------------------------------------------
@@ -665,6 +729,14 @@ function renderAll(){
     panelsEl.appendChild(panel);
   });
 
+  // Add-day tab (admin only) — lets you start a brand new date group,
+  // e.g. when reusing this tool for a different trip.
+  const addDayTab = document.createElement('div');
+  addDayTab.className = 'tab admin-only flex add-day-tab';
+  addDayTab.innerHTML = `<span class="d">＋</span>날짜 추가`;
+  addDayTab.onclick = () => promptNewDay();
+  tabsEl.appendChild(addDayTab);
+
   // Budget tab
   const budgetIdx = days.length;
   const bTab = document.createElement('div');
@@ -774,8 +846,13 @@ function renderAll(){
   const itemNameById = {};
   DATA.forEach(d => { itemNameById[d.id] = d.name; });
 
+  // Only photos attached to an item in THIS trip — PHOTOS is loaded
+  // globally, but item ids are unique per trip so this keeps trips'
+  // photo galleries from bleeding into each other.
+  const currentItemIds = new Set(DATA.map(d => d.id));
   const allPhotos = [];
   Object.keys(PHOTOS).forEach(itemId => {
+    if(!currentItemIds.has(itemId)) return;
     (PHOTOS[itemId] || []).forEach(p => allPhotos.push({ ...p, itemId }));
   });
   allPhotos.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -1186,6 +1263,7 @@ document.getElementById('lbDelete').addEventListener('click', async () => {
 document.getElementById('adminToggle').addEventListener('click', () => {
   if(document.body.classList.contains('admin-mode')){
     document.body.classList.remove('admin-mode');
+    renderTripSwitcher();
     return;
   }
   let pat = localStorage.getItem('gh_pat');
@@ -1195,6 +1273,7 @@ document.getElementById('adminToggle').addEventListener('click', () => {
     localStorage.setItem('gh_pat', pat.trim());
   }
   document.body.classList.add('admin-mode');
+  renderTripSwitcher();
 });
 
 function markUnsaved(){
@@ -1207,7 +1286,7 @@ document.getElementById('saveBarBtn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = '저장 중…';
   try{
-    await githubSaveFile(DATA_PATH, { days: DATA, budget: BUDGET }, '일정 업데이트');
+    await githubSaveFile(currentTrip.dataFile, { days: DATA, budget: BUDGET }, '일정 업데이트');
     hasUnsaved = false;
     document.getElementById('saveBar').classList.add('hidden');
     toast('저장했어요! 1분 내로 반영돼요');
@@ -1227,17 +1306,25 @@ async function githubSaveFile(path, obj, message){
   const getRes = await fetch(url, {
     headers: { Authorization: `token ${pat}`, Accept: 'application/vnd.github+json' }
   });
-  if(!getRes.ok) throw new Error('파일 정보를 가져오지 못했어요 (토큰 확인 필요)');
-  const getData = await getRes.json();
-  const sha = getData.sha;
+  let sha; // left undefined when the file doesn't exist yet — creates it
+  if(getRes.status === 404){
+    sha = undefined;
+  } else if(!getRes.ok){
+    throw new Error('파일 정보를 가져오지 못했어요 (토큰 확인 필요)');
+  } else {
+    sha = (await getRes.json()).sha;
+  }
 
   const jsonStr = JSON.stringify(obj, null, 2);
   const content = btoa(unescape(encodeURIComponent(jsonStr)));
 
+  const body = { message, content, branch: GH_BRANCH };
+  if(sha) body.sha = sha;
+
   const putRes = await fetch(url, {
     method: 'PUT',
     headers: { Authorization: `token ${pat}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, content, sha, branch: GH_BRANCH })
+    body: JSON.stringify(body)
   });
   if(!putRes.ok){
     const err = await putRes.json().catch(() => ({}));
@@ -1250,6 +1337,23 @@ async function githubSaveFile(path, obj, message){
 // Item add/edit/delete
 // ---------------------------------------------------------------
 let editingItemId = null;
+
+// Adds a brand new date group. Days are derived from the unique "day"
+// label on each item (see renderAll), so this just opens the item
+// modal pre-filled with a new day label — saving the first item for
+// that day is what makes its tab appear.
+function promptNewDay(){
+  const existingDays = [...new Set(DATA.map(d => d.day))];
+  const dayLabel = prompt(`새 날짜의 이름을 입력하세요 (예: Day4)\n이미 있는 날짜: ${existingDays.map(d => d.split(' · ')[0]).join(', ') || '없음'}`, `Day${existingDays.length + 1}`);
+  if(!dayLabel || !dayLabel.trim()) return;
+  const dateLabel = prompt('날짜를 입력하세요 (예: 11/16(월))', '');
+  const day = dateLabel && dateLabel.trim() ? `${dayLabel.trim()} · ${dateLabel.trim()}` : dayLabel.trim();
+  if(existingDays.includes(day)){
+    toast('이미 있는 날짜예요. 해당 탭에서 일정을 추가해주세요.');
+    return;
+  }
+  openItemModal(null, day);
+}
 
 function openItemModal(id, dayForNew){
   editingItemId = id;
@@ -1315,6 +1419,8 @@ document.getElementById('itemModalSave').addEventListener('click', () => {
     }
   } else {
     DATA.push({ id: genId('i'), day, time, type, priority, name, addr, memo, home, price, priceLabel, map, dir });
+    const newDays = [...new Set(DATA.map(d => d.day))];
+    activeIdx = newDays.indexOf(day); // jump to the (possibly brand new) day tab
   }
 
   document.getElementById('itemModal').classList.remove('show');
@@ -1388,25 +1494,231 @@ function deleteBudgetItem(id){
 }
 
 // ---------------------------------------------------------------
-// Boot
+// Trips: index + switcher
 // ---------------------------------------------------------------
-Promise.all([
-  fetch(DATA_PATH).then(r => r.json()),
-  loadPhotos(),
-  ensureAuth().catch(() => {})
-]).then(([itinerary, photos]) => {
-  DATA = itinerary.days;
-  BUDGET = itinerary.budget;
-  PHOTOS = photos;
+async function loadTripsIndex(){
+  try{
+    const res = await fetch(TRIPS_INDEX_PATH, { cache: 'no-store' });
+    if(!res.ok) throw new Error('no trips.json');
+    const list = await res.json();
+    if(Array.isArray(list) && list.length) return list;
+    throw new Error('empty trips.json');
+  }catch(e){
+    return [DEFAULT_TRIP];
+  }
+}
+
+function renderTripSwitcher(){
+  const el = document.getElementById('tripSwitcher');
+  el.innerHTML = '';
+  el.classList.toggle('hidden', TRIPS.length <= 1 && !document.body.classList.contains('admin-mode'));
+
+  TRIPS.forEach(trip => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'trip-chip' + (currentTrip && trip.id === currentTrip.id ? ' active' : '');
+    chip.textContent = trip.title;
+    chip.onclick = () => { if(!currentTrip || trip.id !== currentTrip.id) selectTrip(trip.id); };
+    el.appendChild(chip);
+  });
+
+  const addChip = document.createElement('button');
+  addChip.type = 'button';
+  addChip.className = 'trip-chip add-trip admin-only flex';
+  addChip.textContent = '＋ 새 여행';
+  addChip.onclick = () => promptNewTrip();
+  el.appendChild(addChip);
+}
+
+function applyHero(trip){
+  document.getElementById('heroEyebrow').textContent = trip.eyebrow || '';
+  document.getElementById('heroTitle').textContent = trip.title || '';
+  document.getElementById('heroDesc').textContent = trip.desc || '';
+}
+
+// Switch the active trip: updates hero + remembered choice, loads that
+// trip's itinerary/budget, and re-renders. Photos stay loaded globally
+// (item ids are unique per trip already, so no cross-trip mixing).
+async function selectTrip(tripId, opts){
+  opts = opts || {};
+  const trip = TRIPS.find(t => t.id === tripId) || TRIPS[0];
+  if(!trip) return;
+  currentTrip = trip;
+  localStorage.setItem('current_trip_id', trip.id);
+  applyHero(trip);
+  activeIdx = 0;
+  hasUnsaved = false;
+  document.getElementById('saveBar').classList.add('hidden');
+  renderTripSwitcher();
+
+  try{
+    const itinerary = await fetch(trip.dataFile, { cache: 'no-store' }).then(r => r.json());
+    DATA = itinerary.days || [];
+    BUDGET = itinerary.budget || { items: [] };
+  }catch(e){
+    DATA = [];
+    BUDGET = { items: [] };
+    if(!opts.silent) toast('이 여행의 일정 파일을 불러오지 못했어요');
+  }
   renderAll();
-}).catch(() => {
-  panelsEl.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:40px 20px;">일정 데이터를 불러오지 못했어요. itinerary-data.json을 확인해주세요.</div>`;
+}
+
+function slugify(text){
+  return text.trim().toLowerCase()
+    .replace(/[^a-z0-9가-힣]+/g, '-')
+    .replace(/^-+|-+$/g, '') || genId('trip');
+}
+
+// Admin-only: create a brand new trip (new empty data file + a new
+// entry in trips.json), then switch to it. This is what lets the same
+// app/site be reused for the next trip instead of overwriting this one.
+async function promptNewTrip(){
+  const title = prompt('새 여행 이름을 입력하세요 (예: 후쿠오카 4박5일 여행 노선도)');
+  if(!title || !title.trim()) return;
+  const eyebrow = prompt('상단에 짧게 표시할 문구 (예: FUKUOKA · 4.29–5.7)', '') || '';
+  const desc = prompt('한 줄 설명 (선택)', '') || '';
+
+  let id = slugify(title);
+  if(TRIPS.some(t => t.id === id)) id = id + '-' + Date.now().toString(36).slice(-4);
+  const dataFile = `trips/${id}.json`;
+
+  if(!localStorage.getItem('gh_pat')){
+    toast('먼저 관리자 모드로 GitHub 토큰을 등록해주세요');
+    return;
+  }
+
+  toast('새 여행을 만들고 있어요…');
+  try{
+    await githubSaveFile(dataFile, { days: [], budget: { items: [] } }, `새 여행 추가: ${title}`);
+    TRIPS.push({ id, dataFile, eyebrow, title: title.trim(), desc });
+    await githubSaveFile(TRIPS_INDEX_PATH, TRIPS, `trips.json: ${title} 추가`);
+    toast('새 여행을 만들었어요! 이제 날짜와 일정을 추가해보세요');
+    await selectTrip(id);
+  }catch(err){
+    // Roll back the in-memory trip entry if trips.json save failed after
+    // the data file succeeded, so the switcher doesn't show a ghost trip.
+    TRIPS = TRIPS.filter(t => t.id !== id);
+    renderTripSwitcher();
+    toast('여행 추가 실패: ' + err.message);
+  }
+}
+
+// ---------------------------------------------------------------
+// Boot / data refresh
+// ---------------------------------------------------------------
+async function loadInitial(){
+  TRIPS = await loadTripsIndex();
+  const savedId = localStorage.getItem('current_trip_id');
+  const startTrip = TRIPS.find(t => t.id === savedId) || TRIPS[0];
+
+  try{
+    await Promise.all([
+      selectTrip(startTrip.id, { silent: true }),
+      loadPhotos().then(p => { PHOTOS = p; renderAll(); }),
+      ensureAuth().catch(() => {})
+    ]);
+  }catch(e){
+    panelsEl.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:40px 20px;">일정 데이터를 불러오지 못했어요.</div>`;
+  }
+}
+
+// Re-fetch the trip list + current trip's itinerary/photos without
+// disturbing the current tab/scroll. Skips silently while there are
+// unsaved admin edits so a background refresh can't clobber work in
+// progress.
+async function refreshData(opts){
+  opts = opts || {};
+  if(hasUnsaved){
+    if(opts.manual) toast('저장하지 않은 수정사항이 있어요. 먼저 저장하거나 취소해주세요.');
+    return;
+  }
+  try{
+    const [trips, itinerary, photos] = await Promise.all([
+      loadTripsIndex(),
+      fetch(currentTrip.dataFile, { cache: 'no-store' }).then(r => r.json()),
+      loadPhotos()
+    ]);
+    const changed = JSON.stringify(TRIPS) !== JSON.stringify(trips)
+      || JSON.stringify(DATA) !== JSON.stringify(itinerary.days)
+      || JSON.stringify(BUDGET) !== JSON.stringify(itinerary.budget)
+      || JSON.stringify(PHOTOS) !== JSON.stringify(photos);
+    TRIPS = trips;
+    currentTrip = TRIPS.find(t => t.id === currentTrip.id) || currentTrip;
+    DATA = itinerary.days;
+    BUDGET = itinerary.budget;
+    PHOTOS = photos;
+    renderTripSwitcher();
+    renderAll();
+    if(opts.manual) toast(changed ? '최신 내용으로 업데이트했어요' : '이미 최신 상태예요');
+    else if(changed) toast('일정이 업데이트됐어요');
+  } catch(e){
+    if(opts.manual) toast('새로고침에 실패했어요');
+  }
+}
+
+loadInitial();
+
+const refreshBtn = document.getElementById('refreshBtn');
+refreshBtn.addEventListener('click', async () => {
+  refreshBtn.classList.add('spin');
+  await refreshData({ manual: true });
+  setTimeout(() => refreshBtn.classList.remove('spin'), 600);
 });
+
+// Auto-refresh whenever the app regains focus/visibility — this is what
+// makes a homescreen-bookmarked PWA pick up changes without a manual
+// reload, since standalone PWAs otherwise just resume their last state.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible') refreshData();
+});
+window.addEventListener('pageshow', (e) => {
+  if(e.persisted) refreshData();
+});
+window.addEventListener('focus', () => refreshData());
+
+// Also poll periodically while the tab stays open/active.
+setInterval(() => {
+  if(document.visibilityState === 'visible') refreshData();
+}, 5 * 60 * 1000);
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      // A worker is already waiting (e.g. updated while app was closed).
+      if(reg.waiting) showUpdateBanner(reg);
+
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if(!nw) return;
+        nw.addEventListener('statechange', () => {
+          if(nw.state === 'installed' && navigator.serviceWorker.controller){
+            showUpdateBanner(reg);
+          }
+        });
+      });
+
+      // Check for a new sw.js whenever the app becomes visible again.
+      document.addEventListener('visibilitychange', () => {
+        if(document.visibilityState === 'visible') reg.update().catch(() => {});
+      });
+      setInterval(() => reg.update().catch(() => {}), 5 * 60 * 1000);
+    }).catch(() => {});
   });
+
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+}
+
+function showUpdateBanner(reg){
+  const banner = document.getElementById('updateBanner');
+  banner.classList.add('show');
+  document.getElementById('updateBannerBtn').onclick = () => {
+    if(reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+  };
 }
 </script>
 </body>
