@@ -18,6 +18,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
     --bg: #12172a;
@@ -267,7 +268,23 @@
     display:none; align-items:center; justify-content:center; padding:24px;
   }
   .lightbox-overlay.show{ display:flex; }
-  .lightbox-overlay img{ max-width:100%; max-height:100%; border-radius:10px; }
+  .lightbox-box{ display:flex; flex-direction:column; align-items:center; gap:12px; max-width:100%; max-height:100%; }
+  .lightbox-box img{ max-width:100%; max-height:70vh; border-radius:10px; }
+  .lightbox-actions{ display:flex; gap:8px; }
+  .lb-btn{
+    padding:9px 14px; border-radius:9px; border:1px solid var(--line);
+    background:var(--surface); color:var(--cream); font-size:12.5px; font-weight:700; cursor:pointer;
+  }
+  .lb-btn.danger{ color:var(--danger); border-color:var(--danger); }
+
+  /* ---- Gallery tab ---- */
+  .gallery-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin: 0 4px; }
+  .gallery-item img{
+    width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px;
+    border:1px solid var(--line); cursor:pointer; display:block;
+  }
+  .gallery-cap{ font-size:10px; color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .gallery-empty{ text-align:center; color:var(--muted); font-size:12.5px; padding:40px 0; }
 
   /* ---- Admin: edit/delete buttons on cards ---- */
   .admin-only{ display:none; }
@@ -355,7 +372,14 @@
 <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
 
 <div class="lightbox-overlay" id="lightbox">
-  <img id="lightboxImg" src="" alt="">
+  <div class="lightbox-box" id="lightboxBox">
+    <img id="lightboxImg" src="" alt="">
+    <div class="lightbox-actions">
+      <button type="button" class="lb-btn" id="lbDownload">⬇ 저장</button>
+      <button type="button" class="lb-btn danger" id="lbDelete" style="display:none;">삭제</button>
+      <button type="button" class="lb-btn" id="lbClose">✕ 닫기</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="itemModal">
@@ -435,15 +459,18 @@ const DATA_PATH = 'itinerary-data.json';
 const CLOUDINARY_CLOUD = 'p9iuxejh';
 const CLOUDINARY_PRESET = 'osaka-trip';
 const FIRESTORE_PROJECT = 'osaka-trip-2026-6a2a4';
+const FIREBASE_API_KEY = 'AIzaSyCqQ5IOKFRMHRQLRj_pvs1SFAJKACyN3GI';
 
 // ---------------------------------------------------------------
 // State
 // ---------------------------------------------------------------
 let DATA = [];
 let BUDGET = { items: [], notes: [] };
-let PHOTOS = {}; // itemId -> [{url, createdAt}]
+let PHOTOS = {}; // itemId -> [{url, name, ownerId, createdAt, publicId}]
 let activeIdx = 0;
 let hasUnsaved = false;
+const AUTH = { idToken: null, uid: null };
+let currentLightboxPhoto = null;
 
 const ICONS = {
   map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13"/><path d="M15 7v13"/></svg>',
@@ -500,7 +527,7 @@ function toast(msg, ms=2400){
 // ---------------------------------------------------------------
 function photoRowHtml(itemId){
   const photos = PHOTOS[itemId] || [];
-  const thumbs = photos.map(p => `<img class="photo-thumb" src="${p.url}" data-full="${p.url}" loading="lazy" alt="여행 사진">`).join('');
+  const thumbs = photos.map(p => `<img class="photo-thumb" src="${p.url}" data-url="${p.url}" data-name="${p.name || ''}" data-owner="${p.ownerId || ''}" loading="lazy" alt="여행 사진">`).join('');
   return `<div class="photo-row" data-item-id="${itemId}">${thumbs}<button class="photo-add" type="button" data-item-id="${itemId}" title="사진 추가">${ICONS.camera}</button></div>`;
 }
 
@@ -711,6 +738,58 @@ function renderAll(){
   panelsEl.appendChild(sPanel);
 
   loadStayPanel(sPanel);
+
+  // 사진첩 탭
+  const galleryIdx = stayIdx + 1;
+  const gTab = document.createElement('div');
+  gTab.className = 'tab' + (activeIdx === galleryIdx ? ' active' : '');
+  gTab.dataset.idx = galleryIdx;
+  gTab.innerHTML = `<span class="d">사진첩</span>다같이 공유`;
+  gTab.onclick = () => selectDay(galleryIdx);
+  tabsEl.appendChild(gTab);
+
+  const gPanel = document.createElement('div');
+  gPanel.className = 'day-panel' + (activeIdx === galleryIdx ? ' active' : '');
+  gPanel.dataset.idx = galleryIdx;
+
+  const itemNameById = {};
+  DATA.forEach(d => { itemNameById[d.id] = d.name; });
+
+  const allPhotos = [];
+  Object.keys(PHOTOS).forEach(itemId => {
+    (PHOTOS[itemId] || []).forEach(p => allPhotos.push({ ...p, itemId }));
+  });
+  allPhotos.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const dlBtn = document.createElement('button');
+  dlBtn.type = 'button';
+  dlBtn.className = 'add-item-btn';
+  dlBtn.style.marginBottom = '14px';
+  dlBtn.textContent = `⬇ 전체 사진 다운로드 (${allPhotos.length}장, zip)`;
+  dlBtn.onclick = () => downloadAllPhotos(allPhotos, dlBtn);
+  gPanel.appendChild(dlBtn);
+
+  if(allPhotos.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'gallery-empty';
+    empty.textContent = '아직 올라온 사진이 없어요. 일정 카드의 카메라 버튼으로 올려보세요.';
+    gPanel.appendChild(empty);
+  } else {
+    const grid = document.createElement('div');
+    grid.className = 'gallery-grid';
+    allPhotos.forEach(p => {
+      const cell = document.createElement('div');
+      cell.className = 'gallery-item';
+      cell.innerHTML = `
+        <img src="${p.url}" data-url="${p.url}" data-name="${p.name || ''}" data-owner="${p.ownerId || ''}" loading="lazy" alt="여행 사진">
+        <div class="gallery-cap">${itemNameById[p.itemId] || ''}</div>
+      `;
+      grid.appendChild(cell);
+    });
+    gPanel.appendChild(grid);
+  }
+
+  panelsEl.appendChild(gPanel);
 }
 
 function ddayInfo(targetDateStr){
@@ -783,6 +862,39 @@ function selectDay(i){
 }
 
 // ---------------------------------------------------------------
+// Firebase anonymous auth (gives each device a stable uid so
+// "delete my own photos" can be enforced by Firestore rules)
+// ---------------------------------------------------------------
+async function ensureAuth(){
+  const refreshToken = localStorage.getItem('anon_refresh_token');
+  if(refreshToken){
+    try{
+      const res = await fetch(`https://securetoken.googleapis.com/v1/token?key=${FIREBASE_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(refreshToken)}`
+      });
+      if(res.ok){
+        const data = await res.json();
+        AUTH.idToken = data.id_token;
+        AUTH.uid = data.user_id;
+        localStorage.setItem('anon_refresh_token', data.refresh_token);
+        return;
+      }
+    }catch(e){ /* fall through to fresh sign-up */ }
+  }
+  const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ returnSecureToken: true })
+  });
+  const data = await res.json();
+  AUTH.idToken = data.idToken;
+  AUTH.uid = data.localId;
+  localStorage.setItem('anon_refresh_token', data.refreshToken);
+}
+
+// ---------------------------------------------------------------
 // Photos: Cloudinary upload + Firestore metadata
 // ---------------------------------------------------------------
 async function loadPhotos(){
@@ -796,8 +908,10 @@ async function loadPhotos(){
       const itemId = f.itemId && f.itemId.stringValue;
       const url = f.url && f.url.stringValue;
       const createdAt = (f.createdAt && f.createdAt.timestampValue) || doc.createTime;
+      const ownerId = f.ownerId && f.ownerId.stringValue;
+      const publicId = f.publicId && f.publicId.stringValue;
       if(!itemId || !url) return;
-      (map[itemId] = map[itemId] || []).push({ url, createdAt });
+      (map[itemId] = map[itemId] || []).push({ url, createdAt, ownerId, publicId, name: doc.name });
     });
     Object.values(map).forEach(arr => arr.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt)));
     return map;
@@ -807,13 +921,16 @@ async function loadPhotos(){
 }
 
 async function uploadPhoto(itemId, file){
+  await ensureAuth();
+
   const fd = new FormData();
   fd.append('file', file);
   fd.append('upload_preset', CLOUDINARY_PRESET);
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:'POST', body: fd });
   if(!res.ok) throw new Error('Cloudinary upload failed');
-  const data = await res.json();
-  const url = data.secure_url;
+  const cdata = await res.json();
+  const url = cdata.secure_url;
+  const publicId = cdata.public_id || '';
 
   if(!localStorage.getItem('uploader_asked')){
     const name = prompt('사진 올릴 때 표시할 이름을 알려주세요 (안 적어도 괜찮아요)');
@@ -822,18 +939,77 @@ async function uploadPhoto(itemId, file){
   }
   const uploader = localStorage.getItem('uploader_name') || '';
 
-  await fetch(`https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/photos`, {
+  const fsRes = await fetch(`https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/photos`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${AUTH.idToken}` },
     body: JSON.stringify({ fields: {
       itemId: { stringValue: itemId },
       url: { stringValue: url },
       createdAt: { timestampValue: new Date().toISOString() },
       uploader: { stringValue: uploader },
+      ownerId: { stringValue: AUTH.uid },
+      publicId: { stringValue: publicId },
     }})
   });
+  if(!fsRes.ok) throw new Error('사진 정보를 저장하지 못했어요');
+  const fsData = await fsRes.json();
 
-  return url;
+  return { url, name: fsData.name, ownerId: AUTH.uid, publicId, createdAt: new Date().toISOString() };
+}
+
+async function deletePhotoDoc(docName){
+  await ensureAuth();
+  const res = await fetch(`https://firestore.googleapis.com/v1/${docName}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${AUTH.idToken}` }
+  });
+  return res.ok;
+}
+
+async function downloadSinglePhoto(url){
+  try{
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'osaka-photo.jpg';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }catch(e){
+    toast('다운로드에 실패했어요');
+  }
+}
+
+async function downloadAllPhotos(photos, btn){
+  if(!photos.length) return;
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = `압축 중… (0/${photos.length})`;
+  try{
+    const zip = new JSZip();
+    for(let i = 0; i < photos.length; i++){
+      try{
+        const res = await fetch(photos[i].url);
+        const blob = await res.blob();
+        zip.file(`osaka_photo_${String(i+1).padStart(3,'0')}.jpg`, blob);
+      }catch(e){ /* skip failed one */ }
+      btn.textContent = `압축 중… (${i+1}/${photos.length})`;
+    }
+    const content = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(content);
+    a.download = 'osaka-trip-photos.zip';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast('다운로드를 시작했어요');
+  }catch(e){
+    toast('압축에 실패했어요');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
 }
 
 let pendingUploadItemId = null;
@@ -848,14 +1024,16 @@ photoInput.addEventListener('change', async () => {
   const addBtn = row ? row.querySelector('.photo-add') : null;
   if(addBtn){ addBtn.disabled = true; addBtn.textContent = '…'; }
   try{
-    const url = await uploadPhoto(itemId, file);
-    (PHOTOS[itemId] = PHOTOS[itemId] || []).push({ url, createdAt: new Date().toISOString() });
+    const photo = await uploadPhoto(itemId, file);
+    (PHOTOS[itemId] = PHOTOS[itemId] || []).push(photo);
     if(row && addBtn){
       const img = document.createElement('img');
       img.className = 'photo-thumb';
       img.loading = 'lazy';
-      img.src = url;
-      img.dataset.full = url;
+      img.src = photo.url;
+      img.dataset.url = photo.url;
+      img.dataset.name = photo.name || '';
+      img.dataset.owner = photo.ownerId || '';
       row.insertBefore(img, addBtn);
     }
     toast('사진이 올라갔어요');
@@ -870,8 +1048,11 @@ document.addEventListener('click', (e) => {
   const addBtn = e.target.closest('.photo-add');
   if(addBtn){ pendingUploadItemId = addBtn.dataset.itemId; photoInput.click(); return; }
 
-  const thumb = e.target.closest('.photo-thumb');
-  if(thumb){ openLightbox(thumb.dataset.full); return; }
+  const thumb = e.target.closest('.photo-thumb, .gallery-item img');
+  if(thumb){
+    openLightbox({ url: thumb.dataset.url, name: thumb.dataset.name, ownerId: thumb.dataset.owner });
+    return;
+  }
 
   const editItemBtn = e.target.closest('.edit-item-btn');
   if(editItemBtn){ openItemModal(editItemBtn.dataset.id); return; }
@@ -886,12 +1067,48 @@ document.addEventListener('click', (e) => {
   if(delBudgetBtn){ deleteBudgetItem(delBudgetBtn.dataset.id); return; }
 });
 
-function openLightbox(url){
-  document.getElementById('lightboxImg').src = url;
+function openLightbox(photo){
+  currentLightboxPhoto = photo;
+  document.getElementById('lightboxImg').src = photo.url;
+  const delBtn = document.getElementById('lbDelete');
+  delBtn.style.display = (AUTH.uid && photo.ownerId && photo.ownerId === AUTH.uid) ? 'inline-flex' : 'none';
   document.getElementById('lightbox').classList.add('show');
 }
-document.getElementById('lightbox').addEventListener('click', () => {
+function closeLightbox(){
   document.getElementById('lightbox').classList.remove('show');
+}
+document.getElementById('lightbox').addEventListener('click', (e) => {
+  if(e.target.id === 'lightbox') closeLightbox();
+});
+document.getElementById('lightboxBox').addEventListener('click', (e) => e.stopPropagation());
+document.getElementById('lbClose').addEventListener('click', closeLightbox);
+document.getElementById('lbDownload').addEventListener('click', () => {
+  if(currentLightboxPhoto) downloadSinglePhoto(currentLightboxPhoto.url);
+});
+document.getElementById('lbDelete').addEventListener('click', async () => {
+  if(!currentLightboxPhoto || !currentLightboxPhoto.name) return;
+  if(!confirm('이 사진을 삭제할까요? 되돌릴 수 없어요.')) return;
+  const btn = document.getElementById('lbDelete');
+  btn.disabled = true; btn.textContent = '삭제 중…';
+  try{
+    const ok = await deletePhotoDoc(currentLightboxPhoto.name);
+    if(ok){
+      const name = currentLightboxPhoto.name;
+      Object.keys(PHOTOS).forEach(k => { PHOTOS[k] = PHOTOS[k].filter(p => p.name !== name); });
+      document.querySelectorAll(`img[data-name="${CSS.escape(name)}"]`).forEach(el => {
+        const cell = el.closest('.gallery-item');
+        if(cell) cell.remove(); else el.remove();
+      });
+      closeLightbox();
+      toast('삭제했어요');
+    } else {
+      toast('삭제하지 못했어요');
+    }
+  }catch(e){
+    toast('삭제 중 오류가 발생했어요');
+  }finally{
+    btn.disabled = false; btn.textContent = '삭제';
+  }
 });
 
 // ---------------------------------------------------------------
@@ -1106,7 +1323,8 @@ function deleteBudgetItem(id){
 // ---------------------------------------------------------------
 Promise.all([
   fetch(DATA_PATH).then(r => r.json()),
-  loadPhotos()
+  loadPhotos(),
+  ensureAuth().catch(() => {})
 ]).then(([itinerary, photos]) => {
   DATA = itinerary.days;
   BUDGET = itinerary.budget;
