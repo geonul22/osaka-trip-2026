@@ -1026,16 +1026,7 @@ photoInput.addEventListener('change', async () => {
   try{
     const photo = await uploadPhoto(itemId, file);
     (PHOTOS[itemId] = PHOTOS[itemId] || []).push(photo);
-    if(row && addBtn){
-      const img = document.createElement('img');
-      img.className = 'photo-thumb';
-      img.loading = 'lazy';
-      img.src = photo.url;
-      img.dataset.url = photo.url;
-      img.dataset.name = photo.name || '';
-      img.dataset.owner = photo.ownerId || '';
-      row.insertBefore(img, addBtn);
-    }
+    renderAll();
     toast('사진이 올라갔어요');
   }catch(err){
     toast('사진 업로드에 실패했어요. 다시 시도해주세요.');
@@ -1095,11 +1086,8 @@ document.getElementById('lbDelete').addEventListener('click', async () => {
     if(ok){
       const name = currentLightboxPhoto.name;
       Object.keys(PHOTOS).forEach(k => { PHOTOS[k] = PHOTOS[k].filter(p => p.name !== name); });
-      document.querySelectorAll(`img[data-name="${CSS.escape(name)}"]`).forEach(el => {
-        const cell = el.closest('.gallery-item');
-        if(cell) cell.remove(); else el.remove();
-      });
       closeLightbox();
+      renderAll();
       toast('삭제했어요');
     } else {
       toast('삭제하지 못했어요');
