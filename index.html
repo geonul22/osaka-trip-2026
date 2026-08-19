@@ -428,7 +428,7 @@
   <h1 id="heroTitle">오사카 3박4일 여행 노선도</h1>
   <p id="heroDesc">고등학교 친구 6인, 난바 · 신사이바시 숙소 기준. 날짜별로 탭을 눌러 확인하세요.</p>
   <button class="refresh-toggle" id="refreshBtn" title="새로고침">⟳</button>
-  <button class="admin-toggle" id="adminToggle" title="관리자 모드">⚙</button>
+  <button class="admin-toggle" id="adminToggle" title="관리자 모드 (길게 누르면 저장된 토큰 지우기)">⚙</button>
 </div>
 <div class="update-banner" id="updateBanner">새 버전이 있어요 · <button type="button" id="updateBannerBtn">새로고침</button></div>
 <div class="trip-switcher" id="tripSwitcher"></div>
@@ -1261,6 +1261,7 @@ document.getElementById('lbDelete').addEventListener('click', async () => {
 // Admin mode
 // ---------------------------------------------------------------
 document.getElementById('adminToggle').addEventListener('click', () => {
+  if(adminLongPressFired){ adminLongPressFired = false; return; } // long-press already handled it
   if(document.body.classList.contains('admin-mode')){
     document.body.classList.remove('admin-mode');
     renderTripSwitcher();
@@ -1275,6 +1276,35 @@ document.getElementById('adminToggle').addEventListener('click', () => {
   document.body.classList.add('admin-mode');
   renderTripSwitcher();
 });
+
+// Long-press (⚙ 버튼을 ~600ms 누르고 있기) the token stored on THIS device —
+// doesn't revoke the token on GitHub's side, just forgets it locally so
+// the next admin-mode entry asks for a fresh one.
+let adminLongPressTimer = null;
+let adminLongPressFired = false;
+function clearAdminLongPress(){
+  clearTimeout(adminLongPressTimer);
+  adminLongPressTimer = null;
+}
+document.getElementById('adminToggle').addEventListener('pointerdown', () => {
+  adminLongPressFired = false;
+  adminLongPressTimer = setTimeout(() => {
+    adminLongPressFired = true;
+    if(!localStorage.getItem('gh_pat')){
+      toast('저장된 토큰이 없어요');
+      return;
+    }
+    if(confirm('이 기기에 저장된 GitHub 토큰을 지울까요?\n(GitHub에서 토큰 자체를 폐기하려면 github.com/settings/tokens 에서 따로 삭제해야 해요)')){
+      localStorage.removeItem('gh_pat');
+      document.body.classList.remove('admin-mode');
+      renderTripSwitcher();
+      toast('저장된 토큰을 지웠어요');
+    }
+  }, 600);
+});
+['pointerup','pointerleave','pointercancel'].forEach(evt =>
+  document.getElementById('adminToggle').addEventListener(evt, clearAdminLongPress)
+);
 
 function markUnsaved(){
   hasUnsaved = true;
