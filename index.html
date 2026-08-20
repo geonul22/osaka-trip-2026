@@ -1952,11 +1952,6 @@ document.addEventListener('click', (e) => {
     return;
   }
 
-  const lbPrev = e.target.closest('#lbPrev');
-  if(lbPrev){ lbGoto(-1); return; }
-  const lbNext = e.target.closest('#lbNext');
-  if(lbNext){ lbGoto(1); return; }
-
   const editItemBtn = e.target.closest('.edit-item-btn');
   if(editItemBtn){ openItemModal(editItemBtn.dataset.id); return; }
 
@@ -2094,6 +2089,8 @@ document.getElementById('lightbox').addEventListener('click', (e) => {
 });
 document.getElementById('lightboxBox').addEventListener('click', (e) => e.stopPropagation());
 document.getElementById('lbClose').addEventListener('click', closeLightbox);
+document.getElementById('lbPrev').addEventListener('click', () => lbGoto(-1));
+document.getElementById('lbNext').addEventListener('click', () => lbGoto(1));
 document.getElementById('lbInfoToggle').addEventListener('click', () => {
   lbInfoOpen = !lbInfoOpen;
   renderLightboxInfoPanel(currentPhotoList[currentPhotoIndex]);
