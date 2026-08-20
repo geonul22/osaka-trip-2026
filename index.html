@@ -331,26 +331,52 @@
   .picker-empty{ color:var(--muted); font-size:12.5px; text-align:center; padding:16px 0; }
 
   .lightbox-overlay{
-    position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:100;
-    display:none; align-items:center; justify-content:center; padding:24px;
+    position:fixed; inset:0; background:rgba(0,0,0,.94); z-index:100;
+    display:none; padding:0;
   }
   .lightbox-overlay.show{ display:flex; }
-  .lightbox-box{ display:flex; flex-direction:column; align-items:center; gap:12px; max-width:100%; max-height:100%; }
-  .lightbox-img-wrap{ position:relative; max-width:100%; max-height:70vh; display:flex; align-items:center; justify-content:center; }
-  .lightbox-box img{ max-width:100%; max-height:70vh; border-radius:10px; touch-action:pan-y; }
+  .lightbox-box{
+    display:flex; flex-direction:column; width:100%; height:100dvh;
+  }
+  .lb-topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+    flex-shrink:0;
+  }
+  .lb-icon-btn{
+    width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.2); color:var(--cream);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .lb-icon-btn svg{ width:18px; height:18px; }
+  .lightbox-img-wrap{
+    position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
+  }
+  .lightbox-box img{ max-width:100%; max-height:100%; object-fit:contain; touch-action:pan-y; }
   .lb-nav{
-    position:absolute; top:50%; transform:translateY(-50%); width:38px; height:38px;
-    border-radius:50%; background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.25);
+    position:absolute; top:50%; transform:translateY(-50%); width:40px; height:40px;
+    border-radius:50%; background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.25);
     color:var(--cream); display:flex; align-items:center; justify-content:center; cursor:pointer;
   }
   .lb-nav svg{ width:20px; height:20px; }
-  .lb-nav-prev{ left:6px; }
-  .lb-nav-next{ right:6px; }
+  .lb-nav-prev{ left:8px; }
+  .lb-nav-next{ right:8px; }
   .lb-nav.hidden{ display:none; }
-  .lb-counter{ font-size:11.5px; color:var(--muted); }
-  .lightbox-actions{ display:flex; gap:8px; }
+  .lb-counter{ font-size:12px; color:var(--muted); }
+  .lb-info-panel{
+    display:none; flex-shrink:0; margin:0 14px 4px; padding:11px 13px;
+    background:var(--surface-alt); border:1px solid var(--line); border-radius:12px;
+    font-size:12px; color:var(--muted); line-height:1.7;
+  }
+  .lb-info-panel.show{ display:block; }
+  .lb-info-panel .lbi-row b{ color:var(--cream); font-weight:700; }
+  .lb-info-panel a{ color:var(--amber); }
+  .lightbox-actions{
+    display:flex; gap:8px; flex-shrink:0;
+    padding:10px 14px calc(14px + env(safe-area-inset-bottom));
+  }
   .lb-btn{
-    padding:9px 14px; border-radius:9px; border:1px solid var(--line);
+    flex:1; padding:11px 14px; border-radius:9px; border:1px solid var(--line);
     background:var(--surface); color:var(--cream); font-size:12.5px; font-weight:700; cursor:pointer;
   }
   .lb-btn.danger{ color:var(--danger); border-color:var(--danger); }
@@ -558,20 +584,24 @@
   </div>
 </div>
 
-<input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="photoInput" accept="image/*" style="display:none">
 
 <div class="lightbox-overlay" id="lightbox">
   <div class="lightbox-box" id="lightboxBox">
+    <div class="lb-topbar">
+      <button type="button" class="lb-icon-btn" id="lbInfoToggle" title="사진 정보"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button>
+      <div class="lb-counter" id="lbCounter"></div>
+      <button type="button" class="lb-icon-btn" id="lbClose" title="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+    </div>
     <div class="lightbox-img-wrap">
       <button type="button" class="lb-nav lb-nav-prev" id="lbPrev" title="이전 사진"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
       <img id="lightboxImg" src="" alt="">
       <button type="button" class="lb-nav lb-nav-next" id="lbNext" title="다음 사진"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
     </div>
-    <div class="lb-counter" id="lbCounter"></div>
+    <div class="lb-info-panel" id="lbInfoPanel"></div>
     <div class="lightbox-actions">
       <button type="button" class="lb-btn" id="lbDownload">⬇ 저장</button>
       <button type="button" class="lb-btn danger" id="lbDelete" style="display:none;">삭제</button>
-      <button type="button" class="lb-btn" id="lbClose">✕ 닫기</button>
     </div>
   </div>
 </div>
@@ -1495,8 +1525,12 @@ async function loadPhotos(){
       const createdAt = (f.createdAt && f.createdAt.timestampValue) || doc.createTime;
       const ownerId = f.ownerId && f.ownerId.stringValue;
       const publicId = f.publicId && f.publicId.stringValue;
+      const uploader = (f.uploader && f.uploader.stringValue) || '';
+      const takenAt = (f.takenAt && f.takenAt.stringValue) || null;
+      const lat = f.lat && f.lat.doubleValue != null ? f.lat.doubleValue : null;
+      const lng = f.lng && f.lng.doubleValue != null ? f.lng.doubleValue : null;
       if(!itemId || !url) return;
-      (map[itemId] = map[itemId] || []).push({ url, createdAt, ownerId, publicId, name: doc.name });
+      (map[itemId] = map[itemId] || []).push({ url, createdAt, ownerId, publicId, uploader, takenAt, lat, lng, name: doc.name });
     });
     Object.values(map).forEach(arr => arr.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt)));
     return map;
@@ -1505,8 +1539,125 @@ async function loadPhotos(){
   }
 }
 
+// ---- Minimal EXIF reader (JPEG only): pulls just DateTimeOriginal and
+// GPS lat/lng, which is all we display. Reading only the first 256KB
+// keeps this fast — EXIF headers sit right after the JPEG SOI marker. ----
+function readPhotoExif(file){
+  return new Promise((resolve) => {
+    if(!file){ resolve(null); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{ resolve(parseExifFromArrayBuffer(e.target.result)); }
+      catch(err){ resolve(null); }
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsArrayBuffer(file.slice(0, 262144));
+  });
+}
+
+function parseExifFromArrayBuffer(buf){
+  const view = new DataView(buf);
+  if(view.byteLength < 4 || view.getUint16(0, false) !== 0xFFD8) return null; // not a JPEG
+  let offset = 2;
+  while(offset < view.byteLength - 1){
+    const marker = view.getUint16(offset, false);
+    offset += 2;
+    if(marker === 0xFFE1){
+      const segStart = offset + 2;
+      if(segStart + 4 > view.byteLength || view.getUint32(segStart, false) !== 0x45786966) return null; // "Exif"
+      return exifParseTiff(view, segStart + 6);
+    } else if((marker & 0xFF00) !== 0xFF00){
+      break; // hit image scan data — no EXIF segment found
+    } else {
+      if(offset + 2 > view.byteLength) break;
+      offset += view.getUint16(offset, false);
+    }
+  }
+  return null;
+}
+
+function exifParseTiff(view, tiffStart){
+  const little = view.getUint16(tiffStart, false) === 0x4949;
+  const firstIfdOffset = view.getUint32(tiffStart + 4, little);
+  const ifd0 = exifReadIfd(view, tiffStart, tiffStart + firstIfdOffset, little);
+
+  let dateTimeOriginal = null;
+  let gps = null;
+
+  if(ifd0.tags[0x8769]){ // Exif sub-IFD pointer
+    const exifIfd = exifReadIfd(view, tiffStart, tiffStart + ifd0.tags[0x8769].value, little);
+    const dt = exifIfd.tags[0x9003] || exifIfd.tags[0x9004]; // DateTimeOriginal / DateTimeDigitized
+    if(dt && dt.ascii) dateTimeOriginal = dt.ascii.replace(/\0+$/, '');
+  }
+  if(ifd0.tags[0x8825]){ // GPS IFD pointer
+    const gpsIfd = exifReadIfd(view, tiffStart, tiffStart + ifd0.tags[0x8825].value, little);
+    const latRef = gpsIfd.tags[1] && gpsIfd.tags[1].ascii;
+    const lat = gpsIfd.tags[2] && gpsIfd.tags[2].rationals;
+    const lngRef = gpsIfd.tags[3] && gpsIfd.tags[3].ascii;
+    const lng = gpsIfd.tags[4] && gpsIfd.tags[4].rationals;
+    if(lat && lng && lat.length === 3 && lng.length === 3){
+      let latDeg = exifDmsToDeg(lat);
+      let lngDeg = exifDmsToDeg(lng);
+      if(latRef && latRef[0] === 'S') latDeg = -latDeg;
+      if(lngRef && lngRef[0] === 'W') lngDeg = -lngDeg;
+      gps = { lat: latDeg, lng: lngDeg };
+    }
+  }
+  return { dateTimeOriginal, gps };
+}
+
+function exifDmsToDeg(rationals){
+  const [d, m, s] = rationals.map(r => r.den ? r.num / r.den : 0);
+  return d + m / 60 + s / 3600;
+}
+
+function exifReadIfd(view, tiffStart, ifdOffset, little){
+  const numEntries = view.getUint16(ifdOffset, little);
+  const tags = {};
+  const typeSizes = {1:1,2:1,3:2,4:4,5:8,7:1,9:4,10:8};
+  for(let i = 0; i < numEntries; i++){
+    const entryOffset = ifdOffset + 2 + i * 12;
+    const tag = view.getUint16(entryOffset, little);
+    const type = view.getUint16(entryOffset + 2, little);
+    const count = view.getUint32(entryOffset + 4, little);
+    const valueOffsetField = entryOffset + 8;
+    const size = (typeSizes[type] || 1) * count;
+    const dataOffset = size <= 4 ? valueOffsetField : tiffStart + view.getUint32(valueOffsetField, little);
+
+    let entry = {};
+    if(type === 2){ // ASCII
+      let str = '';
+      for(let k = 0; k < count; k++) str += String.fromCharCode(view.getUint8(dataOffset + k));
+      entry.ascii = str;
+    } else if(type === 5 || type === 10){ // RATIONAL / SRATIONAL
+      const rationals = [];
+      for(let k = 0; k < count; k++){
+        const num = type === 5 ? view.getUint32(dataOffset + k*8, little) : view.getInt32(dataOffset + k*8, little);
+        const den = type === 5 ? view.getUint32(dataOffset + k*8 + 4, little) : view.getInt32(dataOffset + k*8 + 4, little);
+        rationals.push({ num, den });
+      }
+      entry.rationals = rationals;
+    } else if(type === 4){
+      entry.value = view.getUint32(size <= 4 ? valueOffsetField : dataOffset, little);
+    } else if(type === 3){
+      entry.value = view.getUint16(size <= 4 ? valueOffsetField : dataOffset, little);
+    } else {
+      entry.value = view.getUint32(valueOffsetField, little);
+    }
+    tags[tag] = entry;
+  }
+  return { tags };
+}
+
+// EXIF dates look like "2026:11:13 14:32:10" (no timezone) — treat as local time.
+function exifDateToIso(s){
+  const m = s.match(/^(\d{4}):(\d{2}):(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}` : null;
+}
+
 async function uploadPhoto(itemId, file){
   await ensureAuth();
+  const exif = await readPhotoExif(file).catch(() => null);
 
   const fd = new FormData();
   fd.append('file', file);
@@ -1523,23 +1674,33 @@ async function uploadPhoto(itemId, file){
     if(name) localStorage.setItem('uploader_name', name);
   }
   const uploader = localStorage.getItem('uploader_name') || '';
+  const takenAt = (exif && exif.dateTimeOriginal) ? exifDateToIso(exif.dateTimeOriginal) : null;
+  const lat = (exif && exif.gps) ? exif.gps.lat : null;
+  const lng = (exif && exif.gps) ? exif.gps.lng : null;
+
+  const fields = {
+    itemId: { stringValue: itemId },
+    url: { stringValue: url },
+    createdAt: { timestampValue: new Date().toISOString() },
+    uploader: { stringValue: uploader },
+    ownerId: { stringValue: AUTH.uid },
+    publicId: { stringValue: publicId },
+  };
+  if(takenAt) fields.takenAt = { stringValue: takenAt };
+  if(lat != null && lng != null){
+    fields.lat = { doubleValue: lat };
+    fields.lng = { doubleValue: lng };
+  }
 
   const fsRes = await fetch(`https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/photos`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${AUTH.idToken}` },
-    body: JSON.stringify({ fields: {
-      itemId: { stringValue: itemId },
-      url: { stringValue: url },
-      createdAt: { timestampValue: new Date().toISOString() },
-      uploader: { stringValue: uploader },
-      ownerId: { stringValue: AUTH.uid },
-      publicId: { stringValue: publicId },
-    }})
+    body: JSON.stringify({ fields })
   });
   if(!fsRes.ok) throw new Error('사진 정보를 저장하지 못했어요');
   const fsData = await fsRes.json();
 
-  return { url, name: fsData.name, ownerId: AUTH.uid, publicId, createdAt: new Date().toISOString() };
+  return { url, name: fsData.name, ownerId: AUTH.uid, publicId, uploader, takenAt, lat, lng, createdAt: new Date().toISOString() };
 }
 
 async function deletePhotoDoc(docName){
@@ -1868,10 +2029,13 @@ async function bulkDeletePhotos(){
 
 // Opens the lightbox on `list[index]`, keeping the rest of `list` around
 // so lbPrev/lbNext (or swipe/arrow keys) can slideshow through it in order.
+let lbInfoOpen = false;
+
 function openLightboxAt(list, index){
   if(!list || !list.length) return;
   currentPhotoList = list;
   currentPhotoIndex = Math.max(0, Math.min(index, list.length - 1));
+  lbInfoOpen = false;
   renderLightboxPhoto();
   document.getElementById('lightbox').classList.add('show');
 }
@@ -1886,7 +2050,37 @@ function renderLightboxPhoto(){
   document.getElementById('lbPrev').classList.toggle('hidden', !multi);
   document.getElementById('lbNext').classList.toggle('hidden', !multi);
   document.getElementById('lbCounter').textContent = multi ? `${currentPhotoIndex + 1} / ${currentPhotoList.length}` : '';
+  renderLightboxInfoPanel(photo);
 }
+
+// Photo metadata panel: uploader, when it was actually taken (EXIF, falling
+// back to upload time if the phone/browser didn't hand us EXIF), and a map
+// link when GPS was present in the file. Most direct camera-capture photos
+// on iOS won't have GPS (iOS strips it for that flow) — we just omit the
+// row rather than showing an error when a field is missing.
+function renderLightboxInfoPanel(photo){
+  const panel = document.getElementById('lbInfoPanel');
+  panel.classList.toggle('show', lbInfoOpen);
+  if(!lbInfoOpen) return;
+
+  const takenDate = photo.takenAt ? new Date(photo.takenAt) : (photo.createdAt ? new Date(photo.createdAt) : null);
+  const dateLabel = takenDate && !isNaN(takenDate)
+    ? takenDate.toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) + (photo.takenAt ? ' (촬영)' : ' (업로드)')
+    : '정보 없음';
+  const uploaderLabel = photo.uploader ? photo.uploader : '이름 미입력';
+  const rows = [
+    `<div class="lbi-row"><b>올린 사람</b> ${uploaderLabel}</div>`,
+    `<div class="lbi-row"><b>일시</b> ${dateLabel}</div>`,
+  ];
+  if(photo.lat != null && photo.lng != null){
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${photo.lat},${photo.lng}`;
+    rows.push(`<div class="lbi-row"><b>위치</b> <a href="${mapUrl}" target="_blank" rel="noopener">지도에서 보기 ↗</a></div>`);
+  } else {
+    rows.push(`<div class="lbi-row"><b>위치</b> 정보 없음</div>`);
+  }
+  panel.innerHTML = rows.join('');
+}
+
 function lbGoto(delta){
   if(currentPhotoList.length < 2) return;
   currentPhotoIndex = (currentPhotoIndex + delta + currentPhotoList.length) % currentPhotoList.length;
@@ -1900,6 +2094,10 @@ document.getElementById('lightbox').addEventListener('click', (e) => {
 });
 document.getElementById('lightboxBox').addEventListener('click', (e) => e.stopPropagation());
 document.getElementById('lbClose').addEventListener('click', closeLightbox);
+document.getElementById('lbInfoToggle').addEventListener('click', () => {
+  lbInfoOpen = !lbInfoOpen;
+  renderLightboxInfoPanel(currentPhotoList[currentPhotoIndex]);
+});
 document.addEventListener('keydown', (e) => {
   if(e.key === 'Enter' && e.target && e.target.id === 'newMemberName'){ addMember(); return; }
   if(!document.getElementById('lightbox').classList.contains('show')) return;
