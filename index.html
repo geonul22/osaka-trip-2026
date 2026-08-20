@@ -1359,11 +1359,13 @@ async function addMember(){
   const updated = [...MEMBERS, name];
   input.disabled = true;
   try{
-    const ok = await saveMembers(currentTrip.id, updated);
-    if(ok){ MEMBERS = updated; renderAll(); toast(`${name}님을 추가했어요`); }
-    else toast('추가하지 못했어요');
+    await saveMembers(currentTrip.id, updated);
+    MEMBERS = updated;
+    renderAll();
+    toast(`${name}님을 추가했어요`);
   }catch(e){
-    toast('추가 중 오류가 발생했어요');
+    console.error('addMember failed', e);
+    toast(e.message || '추가하지 못했어요');
   }finally{
     if(input) input.disabled = false;
   }
@@ -1373,11 +1375,13 @@ async function removeMember(name){
   if(!confirm(`${name}님을 인원 목록에서 삭제할까요? (기존 경비 내역은 남아있어요)`)) return;
   const updated = MEMBERS.filter(m => m !== name);
   try{
-    const ok = await saveMembers(currentTrip.id, updated);
-    if(ok){ MEMBERS = updated; renderAll(); toast('삭제했어요'); }
-    else toast('삭제하지 못했어요');
+    await saveMembers(currentTrip.id, updated);
+    MEMBERS = updated;
+    renderAll();
+    toast('삭제했어요');
   }catch(e){
-    toast('삭제 중 오류가 발생했어요');
+    console.error('removeMember failed', e);
+    toast(e.message || '삭제하지 못했어요');
   }
 }
 
@@ -1736,7 +1740,12 @@ async function saveMembers(tripId, names){
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${AUTH.idToken}` },
     body: JSON.stringify({ fields: { names: { arrayValue: { values: names.map(n => ({ stringValue: n })) } } } })
   });
-  return res.ok;
+  if(!res.ok){
+    const errText = await res.text().catch(() => '');
+    console.error('saveMembers failed', res.status, errText);
+    throw new Error(`저장 실패 (${res.status})`);
+  }
+  return true;
 }
 
 async function loadExpenses(){
@@ -1783,7 +1792,11 @@ async function addExpenseDoc(tripId, payer, amount, memo, participants){
       ownerId: { stringValue: AUTH.uid },
     }})
   });
-  if(!res.ok) throw new Error('경비를 저장하지 못했어요');
+  if(!res.ok){
+    const errText = await res.text().catch(() => '');
+    console.error('addExpenseDoc failed', res.status, errText);
+    throw new Error(`경비를 저장하지 못했어요 (${res.status})`);
+  }
   const data = await res.json();
   return { name: data.name, tripId, payer, amount: Math.round(amount), memo, participants, ownerId: AUTH.uid, createdAt: new Date().toISOString() };
 }
@@ -1801,6 +1814,10 @@ async function updateExpenseDoc(docName, payer, amount, memo, participants){
       participants: { arrayValue: { values: participants.map(p => ({ stringValue: p })) } },
     }})
   });
+  if(!res.ok){
+    const errText = await res.text().catch(() => '');
+    console.error('updateExpenseDoc failed', res.status, errText);
+  }
   return res.ok;
 }
 
@@ -1810,6 +1827,10 @@ async function deleteExpenseDoc(docName){
     method: 'DELETE',
     headers: { Authorization: `Bearer ${AUTH.idToken}` }
   });
+  if(!res.ok){
+    const errText = await res.text().catch(() => '');
+    console.error('deleteExpenseDoc failed', res.status, errText);
+  }
   return res.ok;
 }
 
