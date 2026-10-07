@@ -1,8 +1,13 @@
 {
   "trip_start": "2026-11-13",
   "trip_end": "2026-11-15",
-  "notify_thresholds_days": [14, 7, 3, 1, 0],
-
+  "notify_thresholds_days": [
+    14,
+    7,
+    3,
+    1,
+    0
+  ],
   "_숙소_작성법": "status는 '예약완료' 또는 '후보'만 사용하세요. free_cancel_deadline은 YYYY-MM-DD(오사카 현지시간 기준 마감 시각은 note에 적어두세요). price_display는 자유 텍스트라 엔화든 원화든 편한 대로 적으면 됩니다.",
   "stays": [
     {
@@ -15,32 +20,53 @@
       "price_display": "2박 총액 ¥56,344 (6인 3베드룸 빌라)",
       "free_cancel_deadline": "2026-11-07",
       "note": "무료취소 마감: 오사카 현지시간 11/7 23:59까지. 자동결제 예정일 11/6 (그 전에 취소하면 결제 자체가 안 됨). 예약번호 1759262199, 대표투숙객 LEEKUNWOO"
-    },
-    {
-      "id": "stay2",
-      "name": "Naniwa Ward, Osaka의 숙소 (에어비앤비, 호스트 Toshiko)",
-      "url": "https://www.airbnb.co.kr/trips/v1/1754019488245970489/ro/RESERVATION2_CHECKIN/HMCH5FS9WK",
-      "status": "예약완료",
-      "checkin": "2026-11-13",
-      "checkout": "2026-11-15",
-      "price_display": "총 ₩654,684 (6인)",
-      "free_cancel_deadline": "2026-10-14",
-      "note": "무료취소 마감: 오사카 현지시간 10/14 16:00까지. 11/6 16:00 전까지는 부분환불 가능. 예약코드 HMCH5FS9WK, 주소: 1-chome-17-14 Ebisuhigashi, Naniwa Ward, Osaka 556-0002"
     }
   ],
-
   "_체크리스트_작성법": "days_before는 trip_start(11/13) 기준 며칠 전까지 완료해야 하는지입니다.",
   "checklist": [
-    { "item": "여권 유효기간 확인 (입국일 기준 6개월 이상 권장)", "days_before": 45 },
-    { "item": "숙소 최종 확정 (후보 중 하나로 예약 마무리)", "days_before": 21 },
-    { "item": "왕복 항공권 좌석/수하물 옵션 확인", "days_before": 21 },
-    { "item": "여행자보험 가입", "days_before": 14 },
-    { "item": "포켓와이파이/유심 예약", "days_before": 10 },
-    { "item": "아고다 자동결제(11/6) 전 카드 잔액/한도 확인", "days_before": 8 },
-    { "item": "숙소별 무료취소 마감일 재확인 (후보 정리)", "days_before": 7 },
-    { "item": "엔화 환전", "days_before": 5 },
-    { "item": "가이드북 식당·동선 최종 점검", "days_before": 3 },
-    { "item": "짐 싸기 · 어댑터/보조배터리 챙기기", "days_before": 2 },
-    { "item": "체크인 정보(주소·비밀번호) 캡처해두기", "days_before": 1 }
+    {
+      "item": "여권 유효기간 확인 (입국일 기준 6개월 이상 권장)",
+      "days_before": 45
+    },
+    {
+      "item": "숙소 최종 확정 (후보 중 하나로 예약 마무리)",
+      "days_before": 21
+    },
+    {
+      "item": "왕복 항공권 좌석/수하물 옵션 확인",
+      "days_before": 21
+    },
+    {
+      "item": "여행자보험 가입",
+      "days_before": 14
+    },
+    {
+      "item": "포켓와이파이/유심 예약",
+      "days_before": 10
+    },
+    {
+      "item": "아고다 자동결제(11/6) 전 카드 잔액/한도 확인",
+      "days_before": 8
+    },
+    {
+      "item": "숙소별 무료취소 마감일 재확인 (후보 정리)",
+      "days_before": 7
+    },
+    {
+      "item": "엔화 환전",
+      "days_before": 5
+    },
+    {
+      "item": "가이드북 식당·동선 최종 점검",
+      "days_before": 3
+    },
+    {
+      "item": "짐 싸기 · 어댑터/보조배터리 챙기기",
+      "days_before": 2
+    },
+    {
+      "item": "체크인 정보(주소·비밀번호) 캡처해두기",
+      "days_before": 1
+    }
   ]
 }
