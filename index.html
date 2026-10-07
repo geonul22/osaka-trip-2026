@@ -560,7 +560,7 @@
 <div class="hero">
   <div class="eyebrow" id="heroEyebrow">OSAKA · 11.13 &ndash; 11.15</div>
   <h1 id="heroTitle">오사카 3박4일 여행 노선도</h1>
-  <p id="heroDesc">고등학교 친구 6인, 난바 · 신사이바시 숙소 기준. 날짜별로 탭을 눌러 확인하세요.</p>
+  <p id="heroDesc">고등학교 친구 5인, 난바 · 신사이바시 숙소 기준. 날짜별로 탭을 눌러 확인하세요.</p>
   <button class="refresh-toggle" id="refreshBtn" title="새로고침">⟳</button>
   <button class="admin-toggle" id="adminToggle" title="관리자 모드 (길게 누르면 저장된 토큰 지우기)">⚙</button>
 </div>
@@ -570,7 +570,7 @@
 <div class="tabs" id="tabs"></div>
 <div id="panels"></div>
 
-<footer>지도 보기 · 길찾기 버튼은 구글맵으로 연결됩니다 · 사진은 6인 모두에게 공유돼요</footer>
+<footer>지도 보기 · 길찾기 버튼은 구글맵으로 연결됩니다 · 사진은 5인 모두에게 공유돼요</footer>
 
 <button class="photo-fab" id="photoFab" title="사진 추가"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
 
@@ -704,7 +704,7 @@ const DEFAULT_TRIP = {
   dataFile: 'itinerary-data.json',
   eyebrow: 'OSAKA · 11.13 – 11.15',
   title: '오사카 3박4일 여행 노선도',
-  desc: '고등학교 친구 6인, 난바 · 신사이바시 숙소 기준. 날짜별로 탭을 눌러 확인하세요.'
+  desc: '고등학교 친구 5인, 난바 · 신사이바시 숙소 기준. 날짜별로 탭을 눌러 확인하세요.'
 };
 
 const CLOUDINARY_CLOUD = 'p9iuxejh';
@@ -923,7 +923,7 @@ function renderAll(){
   const bTab = document.createElement('div');
   bTab.className = 'tab' + (activeIdx === budgetIdx ? ' active' : '');
   bTab.dataset.idx = budgetIdx;
-  bTab.innerHTML = `<span class="d">예산</span>1인/6인`;
+  bTab.innerHTML = `<span class="d">예산</span>1인/5인`;
   bTab.onclick = () => selectDay(budgetIdx);
   tabsEl.appendChild(bTab);
 
@@ -932,7 +932,7 @@ function renderAll(){
   bPanel.dataset.idx = budgetIdx;
 
   const total1 = BUDGET.items.reduce((s,i) => s + (i.price || 0), 0);
-  const total6 = total1 * 6;
+  const total5 = total1 * 5;
 
   const summary = document.createElement('div');
   summary.className = 'budget-summary';
@@ -942,8 +942,8 @@ function renderAll(){
       <div class="bs-value">¥${total1.toLocaleString()}</div>
     </div>
     <div class="bs-row">
-      <div class="bs-label">6인 예상 총액</div>
-      <div class="bs-value">¥${total6.toLocaleString()}</div>
+      <div class="bs-label">5인 예상 총액</div>
+      <div class="bs-value">¥${total5.toLocaleString()}</div>
     </div>
   `;
   bPanel.appendChild(summary);
