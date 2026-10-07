@@ -151,6 +151,34 @@
     },
     {
       "day": "Day1 · 11/13(금)",
+      "time": "15:30",
+      "type": "관광",
+      "priority": "-",
+      "name": "난바 야사카 신사",
+      "addr": "오사카시 나니와구 모토마치 2-9-19",
+      "memo": "거대한 사자머리 모양 무대가 포인트, 관람 약 20~30분 · 17:00 폐문 · 숙소(고즈)에서 도보 약 15분",
+      "map": "https://www.google.com/maps/search/?api=1&query=%E9%9B%A3%E6%B3%A2%E5%85%AB%E9%98%AA%E7%A5%9E%E7%A4%BE%20%E5%A4%A7%E9%98%AA",
+      "dir": "https://www.google.com/maps/dir/?api=1&destination=%E9%9B%A3%E6%B3%A2%E5%85%AB%E9%98%AA%E7%A5%9E%E7%A4%BE%20%E5%A4%A7%E9%98%AA",
+      "home": "",
+      "price": 0,
+      "priceLabel": "무료"
+    },
+    {
+      "day": "Day1 · 11/13(금)",
+      "time": "17:00",
+      "type": "관광",
+      "priority": "-",
+      "name": "도톤보리 리버크루즈",
+      "addr": "오사카시 주오구 소에몬초 (타자에몬바시 선착장)",
+      "memo": "약 20분 운항, 매시 정각·30분 출항. 돈키호테 도톤보리점 앞 승선장에서 당일권 구매(전화예약 불가)",
+      "map": "https://www.google.com/maps/search/?api=1&query=%E3%81%A8%E3%82%93%E3%81%BC%E3%82%8A%E3%83%AA%E3%83%90%E3%83%BC%E3%82%AF%E3%83%AB%E3%83%BC%E3%82%BA%20%E5%A4%AA%E5%B7%A6%E8%A1%9B%E9%96%80%E6%A9%8B%E8%88%B9%E7%9D%80%E5%A0%B4%20%E5%A4%A7%E9%98%AA",
+      "dir": "https://www.google.com/maps/dir/?api=1&destination=%E3%81%A8%E3%82%93%E3%81%BC%E3%82%8A%E3%83%AA%E3%83%90%E3%83%BC%E3%82%AF%E3%83%AB%E3%83%BC%E3%82%BA%20%E5%A4%AA%E5%B7%A6%E8%A1%9B%E9%96%80%E6%A9%8B%E8%88%B9%E7%9D%80%E5%A0%B4%20%E5%A4%A7%E9%98%AA",
+      "home": "https://www.ipponmatsu.co.jp/cruise/tombori.html",
+      "price": 2000,
+      "priceLabel": null
+    },
+    {
+      "day": "Day1 · 11/13(금)",
       "time": "18:00",
       "type": "식사(저녁)",
       "priority": "대표",
@@ -568,6 +596,13 @@
         "price": 2700,
         "note": "성수기엔 최대 3,500엔까지 변동, 온라인 사전예매 권장",
         "id": "b_kaiyukan01"
+      },
+      {
+        "cat": "입장료",
+        "name": "도톤보리 리버크루즈",
+        "price": 2000,
+        "note": "20분 승선, 1인 기준",
+        "id": "b_rivercruise01"
       }
     ],
     "notes": [
