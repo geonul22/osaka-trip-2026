@@ -92,7 +92,21 @@
     },
     {
       "day": "Day1 · 11/13(금)",
-      "time": "12:00",
+      "time": "11:50",
+      "type": "이동",
+      "priority": "-",
+      "name": "숙소(코즈) 도착 · 짐 보관",
+      "addr": "3-11-12 Kozu, Chuo Ward, Osaka 542-0072",
+      "memo": "난바역에서 도보 약 9분. 체크인 전이면 호스트에게 짐만 먼저 맡아달라고 요청 (福の屋2, 예약번호 1759262199)",
+      "map": "https://www.google.com/maps/search/?api=1&query=3-ch%C5%8Dme-11-12%20Kozu%2C%20Chuo%20Ward%2C%20Osaka%2C%20542-0072%2C%20Japan",
+      "dir": "https://www.google.com/maps/dir/?api=1&destination=3-ch%C5%8Dme-11-12%20Kozu%2C%20Chuo%20Ward%2C%20Osaka%2C%20542-0072%2C%20Japan",
+      "home": "",
+      "price": 0,
+      "priceLabel": "무료"
+    },
+    {
+      "day": "Day1 · 11/13(금)",
+      "time": "12:15",
       "type": "식사(점심)",
       "priority": "대표",
       "name": "우나기노 나카쇼 난바점",
@@ -107,7 +121,7 @@
     },
     {
       "day": "Day1 · 11/13(금)",
-      "time": "12:00",
+      "time": "12:15",
       "type": "식사(점심)",
       "priority": "대안",
       "name": "마구로야 쿠로긴 + 18번 타코야키",
