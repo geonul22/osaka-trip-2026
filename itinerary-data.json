@@ -181,7 +181,7 @@
     },
     {
       "day": "Day2 · 11/14(토)",
-      "time": "08:00",
+      "time": "07:30",
       "type": "식사(아침)",
       "priority": "-",
       "name": "숙소 근처 아침",
@@ -196,12 +196,26 @@
     },
     {
       "day": "Day2 · 11/14(토)",
-      "time": "09:30",
+      "time": "08:00",
+      "type": "이동",
+      "priority": "-",
+      "name": "오사카성으로 출발",
+      "addr": "지하철 다니마치선 이용",
+      "memo": "숙소(고즈)에서 지하철 약 20분 (환승 1회)",
+      "map": "https://www.google.com/maps/search/?api=1&query=%EC%98%A4%EC%82%AC%EC%B9%B4%EC%84%B1%20%EA%B3%B5%EC%9B%90",
+      "dir": "https://www.google.com/maps/dir/?api=1&destination=%EC%98%A4%EC%82%AC%EC%B9%B4%EC%84%B1%20%EA%B3%B5%EC%9B%90",
+      "home": "",
+      "price": 0,
+      "priceLabel": "무료(교통비 별도 계상)"
+    },
+    {
+      "day": "Day2 · 11/14(토)",
+      "time": "08:20",
       "type": "관광",
       "priority": "-",
       "name": "오사카성 공원",
       "addr": "오사카시 주오구 오사카조",
-      "memo": "천수각까지 둘러보기, 오사카 대표 랜드마크 · 숙소(고즈)에서 도보 36분은 멀어요 — 지하철 추천 (타니마치선, 약 15분)",
+      "memo": "천수각까지 둘러보기, 오사카 대표 랜드마크 · 숙소(고즈)에서 도보 36분은 멀어요 — 지하철 추천 (타니마치선, 약 15분) · 천수각 내부 관람은 생략(시간상), 공원 산책·사진만",
       "map": "https://www.google.com/maps/search/?api=1&query=%E5%A4%A7%E9%98%AA%E5%9F%8E%E5%85%AC%E5%9C%92",
       "dir": "https://www.google.com/maps/dir/?api=1&destination=%E5%A4%A7%E9%98%AA%E5%9F%8E%E5%85%AC%E5%9C%92",
       "home": "https://www.osakacastle.net/",
@@ -211,7 +225,35 @@
     },
     {
       "day": "Day2 · 11/14(토)",
-      "time": "12:30",
+      "time": "09:20",
+      "type": "이동",
+      "priority": "-",
+      "name": "가이유칸으로 이동",
+      "addr": "오사카성 → 오사카코역",
+      "memo": "지하철 환승 포함 약 45분",
+      "map": "https://www.google.com/maps/search/?api=1&query=%E6%B5%B7%E9%81%8A%E9%A4%A8%20%E5%A4%A7%E9%98%AA",
+      "dir": "https://www.google.com/maps/dir/?api=1&destination=%E6%B5%B7%E9%81%8A%E9%A4%A8%20%E5%A4%A7%E9%98%AA",
+      "home": "",
+      "price": 0,
+      "priceLabel": "무료(교통비 별도 계상)"
+    },
+    {
+      "day": "Day2 · 11/14(토)",
+      "time": "10:05",
+      "type": "관광",
+      "priority": "대표",
+      "name": "가이유칸 수족관",
+      "addr": "오사카시 미나토구 카이간도리 1-1-10",
+      "memo": "관람 약 2시간. 시간지정 입장제라 온라인 사전 예약 추천 (토요일 개장 09:00) · 숙소(고즈)에서 약 65분 소요",
+      "map": "https://www.google.com/maps/search/?api=1&query=%E6%B5%B7%E9%81%8A%E9%A4%A8%20%E5%A4%A7%E9%98%AA",
+      "dir": "https://www.google.com/maps/dir/?api=1&destination=%E6%B5%B7%E9%81%8A%E9%A4%A8%20%E5%A4%A7%E9%98%AA",
+      "home": "https://www.kaiyukan.com/language/korean/",
+      "price": 2700,
+      "priceLabel": null
+    },
+    {
+      "day": "Day2 · 11/14(토)",
+      "time": "12:05",
       "type": "이동",
       "priority": "-",
       "name": "신세카이로 이동",
@@ -241,7 +283,7 @@
     },
     {
       "day": "Day2 · 11/14(토)",
-      "time": "14:30",
+      "time": "14:00",
       "type": "관광",
       "priority": "-",
       "name": "츠텐카쿠 & 신세카이 거리",
@@ -256,7 +298,7 @@
     },
     {
       "day": "Day2 · 11/14(토)",
-      "time": "16:30",
+      "time": "15:50",
       "type": "숙소",
       "priority": "-",
       "name": "숙소 복귀 & 휴식",
@@ -438,9 +480,9 @@
       },
       {
         "cat": "교통",
-        "name": "시내 지하철/이동 (평균 4회)",
-        "price": 920,
-        "note": "도톤보리·오사카성·신세카이 등",
+        "name": "시내 지하철/이동 (평균 6회)",
+        "price": 1380,
+        "note": "오사카성·가이유칸·신세카이 등 (Day2 왕복 추가)",
         "id": "b_0b47ec41"
       },
       {
@@ -519,6 +561,13 @@
         "price": 900,
         "note": "기본 라멘 1杯 기준",
         "id": "b_b980be6a"
+      },
+      {
+        "cat": "입장료",
+        "name": "가이유칸 수족관",
+        "price": 2700,
+        "note": "성수기엔 최대 3,500엔까지 변동, 온라인 사전예매 권장",
+        "id": "b_kaiyukan01"
       }
     ],
     "notes": [
