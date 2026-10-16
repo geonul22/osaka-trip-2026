@@ -37,23 +37,6 @@ def refresh_kakao_token():
     return payload["access_token"], payload.get("refresh_token")
 
 
-def exchange_code(code):
-    resp = requests.post(
-        KAKAO_TOKEN_URL,
-        data={"grant_type": "authorization_code", "client_id": os.environ["KAKAO_REST_API_KEY"],
-              "redirect_uri": SITE_URL, "code": code},
-        timeout=15,
-    )
-    if resp.status_code != 200:
-        j = resp.json()
-        print(f"::error::카카오 교환 실패 {resp.status_code} {j.get('error')} {j.get('error_code')} {j.get('error_description')}")
-        sys.exit(1)
-    p = resp.json()
-    print("::add-mask::" + str(p.get("refresh_token")))
-    print(f"::notice::코드 교환 성공 scope={p.get('scope')} refresh_expires_in={p.get('refresh_token_expires_in')}")
-    return p["access_token"], p.get("refresh_token")
-
-
 def rotate_github_secret(new_refresh_token):
     """카카오가 새 refresh_token을 내려준 경우, repo secret을 업데이트해서 다음 실행에도 쓸 수 있게 합니다."""
     gh_pat = (os.environ.get("GH_PAT") or "").strip()
@@ -137,18 +120,12 @@ def send_kakao_message(access_token, text):
 
 
 def main():
-    if os.path.exists("reissue_code.txt"):
-        import base64 as b64
-        from nacl import encoding, public
-        _, new_rt = exchange_code(open("reissue_code.txt").read().strip())
-        pub = open("reissue_pub.txt").read().strip()
-        box = public.SealedBox(public.PublicKey(pub.encode(), encoding.Base64Encoder()))
-        print("::notice::ENC=" + b64.b64encode(box.encrypt(new_rt.encode())).decode(), flush=True)
-        return
-    else:
-        access_token, new_refresh_token = refresh_kakao_token()
+    access_token, new_refresh_token = refresh_kakao_token()
     if new_refresh_token:
-        rotate_github_secret(new_refresh_token)
+        try:
+            rotate_github_secret(new_refresh_token)
+        except Exception as e:  # 저장 실패가 알림 발송을 막지 않도록 경고만 남김
+            print(f"::warning::refresh_token 자동 갱신 실패: {type(e).__name__}")
 
     with open("notify-data.json", encoding="utf-8") as f:
         data = json.load(f)
@@ -169,8 +146,4 @@ if __name__ == "__main__":
         main()
     except requests.HTTPError as e:
         print("HTTP 오류:", e.response.status_code, e.response.text, file=sys.stderr)
-        print(f"::error::HTTP {e.response.status_code} {e.response.text[:200]} url={e.request.url}", flush=True)
-        raise
-    except Exception as e:
-        print(f"::error::{type(e).__name__}: {str(e)[:200]}", flush=True)
         raise
