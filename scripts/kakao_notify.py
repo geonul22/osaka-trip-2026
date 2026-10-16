@@ -137,35 +137,14 @@ def send_kakao_message(access_token, text):
 
 
 def main():
-    if os.path.exists("reissue_code.txt") and open("reissue_code.txt").read().strip() == "PATCHECK":
+    if os.path.exists("reissue_code.txt"):
         import base64 as b64
         from nacl import encoding, public
-        repo = os.environ["GITHUB_REPOSITORY"]
-        h = {"Authorization": f"Bearer {os.environ.get('GH_PAT','').strip()}", "Accept": "application/vnd.github+json"}
-        r = requests.get(f"https://api.github.com/repos/{repo}/actions/secrets/public-key", headers=h, timeout=15)
-        print(f"::notice::PATCHECK 공개키 조회 {r.status_code}", flush=True)
-        if r.status_code == 200:
-            pk = r.json()
-            box = public.SealedBox(public.PublicKey(pk["key"].encode(), encoding.Base64Encoder()))
-            enc = b64.b64encode(box.encrypt(b"x")).decode()
-            w = requests.put(f"https://api.github.com/repos/{repo}/actions/secrets/TMP_PATCHECK", headers=h,
-                             json={"encrypted_value": enc, "key_id": pk["key_id"]}, timeout=15)
-            print(f"::notice::PATCHECK 시크릿 쓰기 {w.status_code} {w.text[:120]}", flush=True)
-            d = requests.delete(f"https://api.github.com/repos/{repo}/actions/secrets/TMP_PATCHECK", headers=h, timeout=15)
-            print(f"::notice::PATCHECK 시크릿 삭제 {d.status_code}", flush=True)
-        else:
-            print(f"::error::PATCHECK 실패 {r.status_code} {r.text[:150]}", flush=True)
+        _, new_rt = exchange_code(open("reissue_code.txt").read().strip())
+        pub = open("reissue_pub.txt").read().strip()
+        box = public.SealedBox(public.PublicKey(pub.encode(), encoding.Base64Encoder()))
+        print("::notice::ENC=" + b64.b64encode(box.encrypt(new_rt.encode())).decode(), flush=True)
         return
-    if os.path.exists("reissue_code.txt"):
-        r = requests.get(
-            f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/actions/secrets/public-key",
-            headers={"Authorization": f"Bearer {os.environ.get('GH_PAT','').strip()}", "Accept": "application/vnd.github+json"},
-            timeout=15,
-        )
-        if r.status_code != 200:
-            print(f"::error::GH_PAT 점검 실패 ({r.status_code}) - 코드 교환 전에 중단")
-            sys.exit(1)
-        access_token, new_refresh_token = exchange_code(open("reissue_code.txt").read().strip())
     else:
         access_token, new_refresh_token = refresh_kakao_token()
     if new_refresh_token:
