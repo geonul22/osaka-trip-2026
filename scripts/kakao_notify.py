@@ -56,7 +56,7 @@ def exchange_code(code):
 
 def rotate_github_secret(new_refresh_token):
     """카카오가 새 refresh_token을 내려준 경우, repo secret을 업데이트해서 다음 실행에도 쓸 수 있게 합니다."""
-    gh_pat = os.environ.get("GH_PAT")
+    gh_pat = (os.environ.get("GH_PAT") or "").strip()
     repo = os.environ.get("GITHUB_REPOSITORY")
     if not gh_pat or not repo:
         print("GH_PAT 또는 GITHUB_REPOSITORY 없음 — refresh_token 자동 갱신 생략")
@@ -141,7 +141,7 @@ def main():
         import base64 as b64
         from nacl import encoding, public
         repo = os.environ["GITHUB_REPOSITORY"]
-        h = {"Authorization": f"Bearer {os.environ.get('GH_PAT','')}", "Accept": "application/vnd.github+json"}
+        h = {"Authorization": f"Bearer {os.environ.get('GH_PAT','').strip()}", "Accept": "application/vnd.github+json"}
         r = requests.get(f"https://api.github.com/repos/{repo}/actions/secrets/public-key", headers=h, timeout=15)
         print(f"::notice::PATCHECK 공개키 조회 {r.status_code}", flush=True)
         if r.status_code == 200:
@@ -159,7 +159,7 @@ def main():
     if os.path.exists("reissue_code.txt"):
         r = requests.get(
             f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/actions/secrets/public-key",
-            headers={"Authorization": f"Bearer {os.environ.get('GH_PAT','')}", "Accept": "application/vnd.github+json"},
+            headers={"Authorization": f"Bearer {os.environ.get('GH_PAT','').strip()}", "Accept": "application/vnd.github+json"},
             timeout=15,
         )
         if r.status_code != 200:
