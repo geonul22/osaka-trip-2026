@@ -667,17 +667,18 @@
 <div class="modal-overlay" id="expenseModal">
   <div class="modal-box">
     <h3 id="expenseModalTitle">경비 추가</h3>
-    <div id="ef-receipt-wrap" style="display:none;margin-bottom:12px">
-      <button type="button" id="ef-receipt-btn" class="primary" style="width:100%">📷 영수증 찍어서 자동 입력</button>
-      <input id="ef-receipt-file" type="file" accept="image/*" capture="environment" style="display:none">
-      <div id="ef-receipt-status" style="font-size:12px;color:var(--muted);margin-top:6px;text-align:center"></div>
-    </div>
     <label>누가 냈나요?</label>
     <select id="ef-payer"></select>
-    <label>금액 · 엔화</label>
-    <input id="ef-amount" type="number" placeholder="7000">
+    <label>원화 결제 금액 · ₩ (카드 알림에 뜬 금액)</label>
+    <input id="ef-krw" type="number" inputmode="numeric" placeholder="35000">
+    <label>엔화 금액 · ¥ (선택, 영수증 확인용)</label>
+    <input id="ef-amount" type="number" inputmode="numeric" placeholder="3500">
     <label>내용</label>
     <input id="ef-memo" placeholder="예: Day2 저녁 야키니쿠">
+    <label>영수증 사진 (선택)</label>
+    <button type="button" id="ef-receipt-btn" style="width:100%">📷 영수증 사진 첨부</button>
+    <input id="ef-receipt-file" type="file" accept="image/*" style="display:none">
+    <div id="ef-receipt-status" style="font-size:12px;color:var(--muted);margin:6px 0 10px;text-align:center"></div>
     <label>누가 나눠 냈나요? (기본: 전원)</label>
     <div class="participant-checks" id="ef-participants"></div>
     <div class="modal-actions">
@@ -737,6 +738,7 @@ let currentPhotoList = [];   // ordered list backing the open lightbox, for prev
 let currentPhotoIndex = -1;
 let MEMBERS = [];      // [name, ...] shared per-trip member roster for 정산
 let EXPENSES = [];     // [{name(docPath), payer, amount, memo, participants, tripId, ownerId, createdAt}]
+let pendingReceiptUrl = ''; // 이번에 저장할 영수증 사진 주소
 let editingExpenseId = null; // Firestore doc path of expense being edited, or null for "add"
 
 const ICONS = {
@@ -1188,12 +1190,13 @@ function renderSettlementPanel(panel){
   panel.appendChild(addExpenseBtn);
 
   // ---- Balances ----
-  const totalSpent = tripExpenses.reduce((s,e) => s + e.amount, 0);
+  const totalSpent = tripExpenses.reduce((s,e) => s + e.krw, 0);
+  const missingKrw = tripExpenses.filter(e => !e.krw).length;
   const balances = MEMBERS.map(name => {
-    const paid = tripExpenses.filter(e => e.payer === name).reduce((s,e) => s + e.amount, 0);
+    const paid = tripExpenses.filter(e => e.payer === name).reduce((s,e) => s + e.krw, 0);
     const owed = tripExpenses.reduce((s,e) => {
       if(!e.participants.includes(name) || e.participants.length === 0) return s;
-      return s + e.amount / e.participants.length;
+      return s + e.krw / e.participants.length;
     }, 0);
     return { name, paid, owed, net: paid - owed };
   });
@@ -1201,8 +1204,8 @@ function renderSettlementPanel(panel){
   const summary = document.createElement('div');
   summary.className = 'settle-summary';
   summary.innerHTML = `
-    <div class="ss-card"><div class="ss-label">총 지출</div><div class="ss-value">¥${Math.round(totalSpent).toLocaleString()}</div></div>
-    <div class="ss-card"><div class="ss-label">항목 수</div><div class="ss-value">${tripExpenses.length}건</div></div>
+    <div class="ss-card"><div class="ss-label">지금까지 쓴 총 금액</div><div class="ss-value">₩${Math.round(totalSpent).toLocaleString()}</div></div>
+    <div class="ss-card"><div class="ss-label">항목 수</div><div class="ss-value">${tripExpenses.length}건</div>${missingKrw ? `<div class="ss-label" style="margin:4px 0 0;color:var(--amber)">원화 미입력 ${missingKrw}건</div>` : ''}</div>
   `;
   panel.appendChild(summary);
 
@@ -1217,8 +1220,8 @@ function renderSettlementPanel(panel){
     balTable.className = 'balance-table';
     balTable.innerHTML = balances.map(b => `
       <div class="balance-row">
-        <div class="bal-name">${b.name}<div class="bal-detail">낸 돈 ¥${Math.round(b.paid).toLocaleString()} · 분담액 ¥${Math.round(b.owed).toLocaleString()}</div></div>
-        <div class="bal-net ${b.net >= 0 ? 'pos' : 'neg'}">${b.net >= 0 ? '+' : '−'}¥${Math.round(Math.abs(b.net)).toLocaleString()}</div>
+        <div class="bal-name">${b.name}<div class="bal-detail">낸 돈 ₩${Math.round(b.paid).toLocaleString()} · 분담액 ₩${Math.round(b.owed).toLocaleString()}</div></div>
+        <div class="bal-net ${b.net >= 0 ? 'pos' : 'neg'}">${b.net >= 0 ? '+' : '−'}₩${Math.round(Math.abs(b.net)).toLocaleString()}</div>
       </div>
     `).join('');
     panel.appendChild(balTable);
@@ -1238,7 +1241,7 @@ function renderSettlementPanel(panel){
       transferList.innerHTML = transfers.map(t => `
         <div class="transfer-row">
           <span>${t.from}</span><span class="t-arrow">→</span><span>${t.to}</span>
-          <span class="t-amount">¥${t.amount.toLocaleString()}</span>
+          <span class="t-amount">₩${t.amount.toLocaleString()}</span>
         </div>
       `).join('');
     }
@@ -1271,7 +1274,9 @@ function renderSettlementPanel(panel){
             <div class="expense-sub">${e.payer} 결제 · ${participantsLabel} 분담 · ${dateLabel}</div>
           </div>
           <div style="text-align:right;">
-            <div class="expense-amount">¥${e.amount.toLocaleString()}</div>
+            <div class="expense-amount">${e.krw ? '₩' + e.krw.toLocaleString() : '<span style="color:var(--muted)">원화 미입력</span>'}</div>
+            ${e.amount ? `<div class="expense-sub" style="text-align:right">¥${e.amount.toLocaleString()}</div>` : ''}
+            ${e.receiptUrl ? `<a class="expense-sub" style="display:block;text-align:right" href="${e.receiptUrl.replace(/"/g,'')}" target="_blank" rel="noopener">📎 영수증</a>` : ''}
             ${isMine ? `<div class="expense-actions">
               <button type="button" class="icon-btn edit-expense-btn" data-id="${e.name}" title="수정">✎</button>
               <button type="button" class="icon-btn danger del-expense-btn" data-id="${e.name}" title="삭제">✕</button>
@@ -1302,7 +1307,9 @@ function openExpenseModal(id){
     if(!exp) return;
     title.textContent = '경비 수정';
     payerSel.value = exp.payer;
-    document.getElementById('ef-amount').value = exp.amount;
+    document.getElementById('ef-amount').value = exp.amount || '';
+    document.getElementById('ef-krw').value = exp.krw || '';
+    pendingReceiptUrl = exp.receiptUrl || '';
     document.getElementById('ef-memo').value = exp.memo;
     partWrap.querySelectorAll('input[type=checkbox]').forEach(cb => {
       cb.checked = exp.participants.includes(cb.value);
@@ -1310,8 +1317,11 @@ function openExpenseModal(id){
   } else {
     title.textContent = '경비 추가';
     document.getElementById('ef-amount').value = '';
+    document.getElementById('ef-krw').value = '';
+    pendingReceiptUrl = '';
     document.getElementById('ef-memo').value = '';
   }
+  updateReceiptStatus();
   modal.classList.add('show');
 }
 
@@ -1321,26 +1331,27 @@ document.getElementById('expenseModalCancel').addEventListener('click', () => {
 
 document.getElementById('expenseModalSave').addEventListener('click', async () => {
   const payer = document.getElementById('ef-payer').value;
-  const amount = Number(document.getElementById('ef-amount').value);
+  const krw = Math.round(Number(document.getElementById('ef-krw').value)) || 0;
+  const amount = Math.round(Number(document.getElementById('ef-amount').value)) || 0;
   const memo = document.getElementById('ef-memo').value.trim();
   const participants = [...document.querySelectorAll('#ef-participants input:checked')].map(cb => cb.value);
 
-  if(!amount || amount <= 0){ alert('금액을 입력해주세요'); return; }
+  if(krw <= 0 && amount <= 0){ alert('원화 금액(또는 엔화 금액)을 입력해주세요'); return; }
   if(participants.length === 0){ alert('나눠 낸 사람을 1명 이상 선택해주세요'); return; }
 
   const saveBtn = document.getElementById('expenseModalSave');
   saveBtn.disabled = true; saveBtn.textContent = '저장 중…';
   try{
     if(editingExpenseId){
-      const ok = await updateExpenseDoc(editingExpenseId, payer, amount, memo, participants);
+      const ok = await updateExpenseDoc(editingExpenseId, payer, amount, memo, participants, krw, pendingReceiptUrl);
       if(ok){
         const idx = EXPENSES.findIndex(e => e.name === editingExpenseId);
-        if(idx > -1) EXPENSES[idx] = { ...EXPENSES[idx], payer, amount: Math.round(amount), memo, participants };
+        if(idx > -1) EXPENSES[idx] = { ...EXPENSES[idx], payer, amount, krw, receiptUrl: pendingReceiptUrl, memo, participants };
       } else {
         toast('수정하지 못했어요'); return;
       }
     } else {
-      const created = await addExpenseDoc(currentTrip.id, payer, amount, memo, participants);
+      const created = await addExpenseDoc(currentTrip.id, payer, amount, memo, participants, krw, pendingReceiptUrl);
       EXPENSES.unshift(created);
     }
     document.getElementById('expenseModal').classList.remove('show');
@@ -1764,8 +1775,12 @@ async function loadExpenses(){
         .map(v => v.stringValue).filter(Boolean);
       const amountField = f.amount || {};
       const amount = Number(amountField.integerValue != null ? amountField.integerValue : amountField.doubleValue) || 0;
+      const krwField = f.krw || {};
+      const krw = Number(krwField.integerValue != null ? krwField.integerValue : krwField.doubleValue) || 0;
       return {
         name: doc.name,
+        krw,
+        receiptUrl: (f.receiptUrl && f.receiptUrl.stringValue) || '',
         payer: (f.payer && f.payer.stringValue) || '',
         amount,
         memo: (f.memo && f.memo.stringValue) || '',
@@ -1782,7 +1797,7 @@ async function loadExpenses(){
   }
 }
 
-async function addExpenseDoc(tripId, payer, amount, memo, participants){
+async function addExpenseDoc(tripId, payer, amount, memo, participants, krw, receiptUrl){
   await ensureAuth();
   const res = await fetch(`https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/expenses`, {
     method: 'POST',
@@ -1791,6 +1806,8 @@ async function addExpenseDoc(tripId, payer, amount, memo, participants){
       tripId: { stringValue: tripId },
       payer: { stringValue: payer },
       amount: { integerValue: String(Math.round(amount)) },
+      krw: { integerValue: String(Math.round(krw || 0)) },
+      receiptUrl: { stringValue: receiptUrl || '' },
       memo: { stringValue: memo },
       participants: { arrayValue: { values: participants.map(p => ({ stringValue: p })) } },
       createdAt: { timestampValue: new Date().toISOString() },
@@ -1803,18 +1820,20 @@ async function addExpenseDoc(tripId, payer, amount, memo, participants){
     throw new Error(`경비를 저장하지 못했어요 (${res.status})`);
   }
   const data = await res.json();
-  return { name: data.name, tripId, payer, amount: Math.round(amount), memo, participants, ownerId: AUTH.uid, createdAt: new Date().toISOString() };
+  return { name: data.name, tripId, payer, amount: Math.round(amount), krw: Math.round(krw || 0), receiptUrl: receiptUrl || '', memo, participants, ownerId: AUTH.uid, createdAt: new Date().toISOString() };
 }
 
-async function updateExpenseDoc(docName, payer, amount, memo, participants){
+async function updateExpenseDoc(docName, payer, amount, memo, participants, krw, receiptUrl){
   await ensureAuth();
-  const mask = ['payer','amount','memo','participants'].map(f => `updateMask.fieldPaths=${f}`).join('&');
+  const mask = ['payer','amount','krw','receiptUrl','memo','participants'].map(f => `updateMask.fieldPaths=${f}`).join('&');
   const res = await fetch(`https://firestore.googleapis.com/v1/${docName}?${mask}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${AUTH.idToken}` },
     body: JSON.stringify({ fields: {
       payer: { stringValue: payer },
       amount: { integerValue: String(Math.round(amount)) },
+      krw: { integerValue: String(Math.round(krw || 0)) },
+      receiptUrl: { stringValue: receiptUrl || '' },
       memo: { stringValue: memo },
       participants: { arrayValue: { values: participants.map(p => ({ stringValue: p })) } },
     }})
@@ -2680,62 +2699,54 @@ function showUpdateBanner(reg){
   };
 }
 
-// ---- 영수증 사진으로 자동 입력 ----
-// 아래 주소는 Cloudflare Worker를 만든 뒤 그 주소로 바꿔요. 비어 있으면 버튼이 안 보여요.
-const RECEIPT_WORKER_URL = '';
+
+// ---- 영수증 사진 첨부 (증거용) ----
+function updateReceiptStatus(msg){
+  const el = document.getElementById('ef-receipt-status');
+  if(!el) return;
+  if(msg){ el.textContent = msg; return; }
+  el.innerHTML = pendingReceiptUrl
+    ? `✔ 사진이 첨부돼 있어요 · <a href="${pendingReceiptUrl.replace(/"/g,'')}" target="_blank" rel="noopener" style="color:var(--amber)">보기</a>`
+    : '';
+}
 (function(){
-  const wrap = document.getElementById('ef-receipt-wrap');
-  if(!RECEIPT_WORKER_URL) return;
-  wrap.style.display = 'block';
   const btn = document.getElementById('ef-receipt-btn');
   const file = document.getElementById('ef-receipt-file');
-  const status = document.getElementById('ef-receipt-status');
   btn.addEventListener('click', () => file.click());
-
-  // 사진을 작게 줄여서 보내요 (빠르고, 비용도 아껴져요)
+  // 사진을 적당히 줄여서 올려요 (빠르고 데이터도 아껴져요)
   function shrink(f){
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        const max = 1100, r = Math.min(1, max / Math.max(img.width, img.height));
+        const max = 1600, r = Math.min(1, max / Math.max(img.width, img.height));
         const c = document.createElement('canvas');
         c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
         URL.revokeObjectURL(img.src);
-        resolve(c.toDataURL('image/jpeg', 0.75).split(',')[1]);
+        c.toBlob(b => b ? resolve(b) : reject(new Error('shrink failed')), 'image/jpeg', 0.8);
       };
       img.onerror = reject;
       img.src = URL.createObjectURL(f);
     });
   }
-
   file.addEventListener('change', async () => {
     const f = file.files[0]; if(!f) return;
-    btn.disabled = true; status.textContent = '영수증 읽는 중… (몇 초 걸려요)';
+    btn.disabled = true; updateReceiptStatus('사진 올리는 중…');
     try{
-      const image = await shrink(f);
-      const res = await fetch(RECEIPT_WORKER_URL, {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ image })
-      });
-      const d = await res.json();
-      if(!res.ok) throw new Error(d.error || '읽기 실패');
-      if(!d.total){ status.textContent = '금액을 못 읽었어요. 직접 입력해 주세요.'; }
-      else{
-        document.getElementById('ef-amount').value = d.total;
-        const memoEl = document.getElementById('ef-memo');
-        if(d.store && !memoEl.value.trim()) memoEl.value = d.store;
-        status.textContent = '✔ 읽었어요' + (d.date ? ' (' + d.date + ')' : '') + ' · 금액과 내용이 맞는지 확인하고 저장하세요';
-      }
+      const blob = await shrink(f);
+      const fd = new FormData();
+      fd.append('file', blob, 'receipt.jpg');
+      fd.append('upload_preset', CLOUDINARY_PRESET);
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:'POST', body: fd });
+      if(!res.ok) throw new Error('upload failed');
+      pendingReceiptUrl = (await res.json()).secure_url || '';
+      updateReceiptStatus();
     }catch(e){
-      status.textContent = '읽기에 실패했어요. 직접 입력해 주세요.';
+      updateReceiptStatus('사진을 올리지 못했어요. 다시 시도해 주세요.');
     }finally{
       btn.disabled = false; file.value = '';
     }
   });
-  // 모달을 열 때마다 안내 글 지우기
-  const modal = document.getElementById('expenseModal');
-  new MutationObserver(() => { if(modal.classList.contains('show')) status.textContent = ''; })
-    .observe(modal, { attributes:true, attributeFilter:['class'] });
 })();
 </script>
 </body>
