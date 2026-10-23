@@ -1319,6 +1319,11 @@ function openExpenseModal(id){
     document.getElementById('ef-amount').value = '';
     document.getElementById('ef-krw').value = '';
     pendingReceiptUrl = '';
+    // 처음엔 '건우'가 들어간 이름, 이후엔 마지막으로 고른 사람이 기본값이에요
+    let defPayer = '';
+    try{ defPayer = localStorage.getItem('last_payer') || ''; }catch(e){}
+    if(!MEMBERS.includes(defPayer)) defPayer = MEMBERS.find(n => n.includes('건우')) || MEMBERS[0];
+    payerSel.value = defPayer;
     document.getElementById('ef-memo').value = '';
   }
   updateReceiptStatus();
@@ -1341,6 +1346,7 @@ document.getElementById('expenseModalSave').addEventListener('click', async () =
 
   const saveBtn = document.getElementById('expenseModalSave');
   saveBtn.disabled = true; saveBtn.textContent = '저장 중…';
+  try{ localStorage.setItem('last_payer', payer); }catch(e){}
   try{
     if(editingExpenseId){
       const ok = await updateExpenseDoc(editingExpenseId, payer, amount, memo, participants, krw, pendingReceiptUrl);
@@ -1358,7 +1364,7 @@ document.getElementById('expenseModalSave').addEventListener('click', async () =
     renderAll();
     toast('저장했어요');
   }catch(e){
-    toast('저장 중 오류가 발생했어요');
+    toast((e && e.message) ? e.message : '저장 중 오류가 발생했어요');
   }finally{
     saveBtn.disabled = false; saveBtn.textContent = '저장';
   }
