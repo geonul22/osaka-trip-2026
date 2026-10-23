@@ -319,6 +319,15 @@
   .photo-fab svg{ width:22px; height:22px; }
   /* nudge the FAB up so it doesn't sit under the admin save-bar */
   body:has(.save-bar:not(.hidden)) .photo-fab{ bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .photo-fab-album{
+    position:fixed; right:24px; bottom: calc(84px + env(safe-area-inset-bottom)); z-index:40;
+    width:40px; height:40px; border-radius:50%; border:none; font-size:18px;
+    background: var(--card, #2a2f45); color: var(--cream, #fff);
+    display:none; align-items:center; justify-content:center;
+    box-shadow: 0 4px 12px rgba(0,0,0,.3); cursor:pointer;
+  }
+  .photo-fab-album.show{ display:flex; }
+  body:has(.save-bar:not(.hidden)) .photo-fab-album{ bottom: calc(148px + env(safe-area-inset-bottom)); }
 
   .picker-row{
     display:flex; align-items:center; gap:10px; width:100%;
@@ -574,17 +583,7 @@
 
 <button class="photo-fab" id="photoFab" title="사진 추가"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
 
-<div class="modal-overlay" id="photoPickerModal">
-  <div class="modal-box">
-    <h3>어느 일정에 사진을 추가할까요?</h3>
-    <label class="participant-check" style="margin:0 0 10px"><input type="checkbox" id="photoAlbumMode"> 앨범에서 고르기 (끄면 카메라가 바로 열려요)</label>
-    <div id="photoPickerList"></div>
-    <div class="modal-actions">
-      <button type="button" id="photoPickerCancel">취소</button>
-    </div>
-  </div>
-</div>
-
+<button class="photo-fab-album" id="photoFabAlbum" title="앨범에서 사진 추가">🖼</button>
 <input type="file" id="photoInput" accept="image/*" style="display:none">
 <input type="file" id="photoInputCam" accept="image/*" capture="environment" style="display:none">
 
@@ -1517,6 +1516,7 @@ function selectDay(i){
 function updatePhotoFabVisibility(){
   const dayCount = [...new Set(DATA.map(d => d.day))].length;
   document.getElementById('photoFab').classList.toggle('show', activeIdx < dayCount);
+  document.getElementById('photoFabAlbum').classList.toggle('show', activeIdx < dayCount);
 }
 
 // ---------------------------------------------------------------
@@ -1698,7 +1698,18 @@ function exifDateToIso(s){
   return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}` : null;
 }
 
-async function uploadPhoto(itemId, file){
+function getDeviceGps(){
+  return new Promise(resolve => {
+    if(!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve(null),
+      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
+    );
+  });
+}
+
+async function uploadPhoto(itemId, file, useDeviceGps){
   await ensureAuth();
   const exif = await readPhotoExif(file).catch(() => null);
 
@@ -1718,8 +1729,13 @@ async function uploadPhoto(itemId, file){
   }
   const uploader = localStorage.getItem('uploader_name') || '';
   const takenAt = (exif && exif.dateTimeOriginal) ? exifDateToIso(exif.dateTimeOriginal) : null;
-  const lat = (exif && exif.gps) ? exif.gps.lat : null;
-  const lng = (exif && exif.gps) ? exif.gps.lng : null;
+  let lat = (exif && exif.gps) ? exif.gps.lat : null;
+  let lng = (exif && exif.gps) ? exif.gps.lng : null;
+  // 방금 카메라로 찍은 사진인데 위치 정보가 없으면, 지금 폰 위치를 대신 써요
+  if(lat == null && useDeviceGps){
+    const g = await getDeviceGps();
+    if(g){ lat = g.lat; lng = g.lng; }
+  }
 
   const fields = {
     itemId: { stringValue: itemId },
@@ -1946,6 +1962,7 @@ async function downloadAllPhotos(photos, btn){
 }
 
 let pendingUploadItemId = null;
+let pendingUploadItemName = '';
 const photoInput = document.getElementById('photoInput');
 
 const photoInputCam = document.getElementById('photoInputCam');
@@ -1959,10 +1976,10 @@ async function handlePhotoPick(input){
   const fab = document.getElementById('photoFab');
   fab.disabled = true;
   try{
-    const photo = await uploadPhoto(itemId, file);
+    const photo = await uploadPhoto(itemId, file, input === photoInputCam);
     (PHOTOS[itemId] = PHOTOS[itemId] || []).push(photo);
     renderAll();
-    toast('사진이 올라갔어요');
+    toast(pendingUploadItemName ? `'${pendingUploadItemName}' 일정에 사진이 올라갔어요` : '사진이 올라갔어요');
   }catch(err){
     toast('사진 업로드에 실패했어요. 다시 시도해주세요.');
   }finally{
@@ -1974,36 +1991,37 @@ async function handlePhotoPick(input){
 // ---------------------------------------------------------------
 // Photo FAB: pick which item, then open the camera/file picker
 // ---------------------------------------------------------------
-document.getElementById('photoFab').addEventListener('click', () => {
+// 일정 고르는 단계 없이: 오늘 날짜(여행 중이면) 또는 지금 보고 있는 날짜에서,
+// 지금 시각 기준으로 가장 최근에 시작한 일정에 사진을 자동으로 붙여요.
+function pickAutoItem(){
   const days = [...new Set(DATA.map(d => d.day))];
-  const day = days[activeIdx];
-  const items = DATA.filter(d => d.day === day);
+  const now = new Date();
+  let dayIdx = days.findIndex(dl => {
+    const m = dl.match(/(\d{1,2})\/(\d{1,2})/);
+    return m && +m[1] === now.getMonth() + 1 && +m[2] === now.getDate();
+  });
+  if(dayIdx < 0) dayIdx = (activeIdx < days.length) ? activeIdx : 0;
+  const items = DATA.filter(d => d.day === days[dayIdx]);
+  if(!items.length) return null;
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const toMin = t => { const m = String(t || '').match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; };
+  let pick = items[0];
+  for(const it of items){
+    const tm = toMin(it.time);
+    if(tm != null && tm <= nowMin) pick = it;
+  }
+  return pick;
+}
+function startPhoto(input){
+  const it = pickAutoItem();
+  if(!it){ toast('이 날짜엔 아직 일정이 없어요'); return; }
+  pendingUploadItemId = it.id;
+  pendingUploadItemName = it.name;
+  input.click();
+}
+document.getElementById('photoFab').addEventListener('click', () => startPhoto(photoInputCam));
+document.getElementById('photoFabAlbum').addEventListener('click', () => startPhoto(photoInput));
 
-  const listEl = document.getElementById('photoPickerList');
-  listEl.innerHTML = items.length
-    ? items.map(it => `<button type="button" class="picker-row" data-id="${it.id}"><span class="ptime">${it.time}</span><span class="pname">${it.name}</span></button>`).join('')
-    : `<div class="picker-empty">이 날짜엔 아직 일정이 없어요</div>`;
-
-  let album = false;
-  try{ album = localStorage.getItem('photo_album_mode') === '1'; }catch(e){}
-  document.getElementById('photoAlbumMode').checked = album;
-  document.getElementById('photoPickerModal').classList.add('show');
-});
-document.getElementById('photoAlbumMode').addEventListener('change', (e) => {
-  try{ localStorage.setItem('photo_album_mode', e.target.checked ? '1' : '0'); }catch(err){}
-});
-
-document.getElementById('photoPickerCancel').addEventListener('click', () => {
-  document.getElementById('photoPickerModal').classList.remove('show');
-});
-
-document.getElementById('photoPickerList').addEventListener('click', (e) => {
-  const row = e.target.closest('.picker-row');
-  if(!row) return;
-  pendingUploadItemId = row.dataset.id;
-  document.getElementById('photoPickerModal').classList.remove('show');
-  (document.getElementById('photoAlbumMode').checked ? photoInput : photoInputCam).click();
-});
 
 document.addEventListener('click', (e) => {
   const galleryImg = e.target.closest('.gallery-item img');
