@@ -667,8 +667,6 @@
 <div class="modal-overlay" id="expenseModal">
   <div class="modal-box">
     <h3 id="expenseModalTitle">경비 추가</h3>
-    <label>누가 냈나요?</label>
-    <select id="ef-payer"></select>
     <label>원화 결제 금액 · ₩ (카드 알림에 뜬 금액)</label>
     <input id="ef-krw" type="number" inputmode="numeric" placeholder="35000">
     <label>엔화 금액 · ¥ (선택, 영수증 확인용)</label>
@@ -679,8 +677,13 @@
     <button type="button" id="ef-receipt-btn" style="width:100%">📷 영수증 사진 첨부</button>
     <input id="ef-receipt-file" type="file" accept="image/*" style="display:none">
     <div id="ef-receipt-status" style="font-size:12px;color:var(--muted);margin:6px 0 10px;text-align:center"></div>
-    <label>누가 나눠 냈나요? (기본: 전원)</label>
-    <div class="participant-checks" id="ef-participants"></div>
+    <label class="participant-check" style="margin:6px 0 10px"><input type="checkbox" id="ef-split"> 나눠 낸 경우 (친구들과 따로 정산)</label>
+    <div id="ef-split-wrap" style="display:none">
+      <label>누가 냈나요?</label>
+      <select id="ef-payer"></select>
+      <label>누가 나눠 냈나요?</label>
+      <div class="participant-checks" id="ef-participants"></div>
+    </div>
     <div class="modal-actions">
       <button id="expenseModalCancel">취소</button>
       <button id="expenseModalSave" class="primary">저장</button>
@@ -1192,9 +1195,13 @@ function renderSettlementPanel(panel){
   // ---- Balances ----
   const totalSpent = tripExpenses.reduce((s,e) => s + e.krw, 0);
   const missingKrw = tripExpenses.filter(e => !e.krw).length;
+  // 공동경비(나눈 사람 없음) = 건우가 먼저 결제, 나중에 회비에서 돌려받을 돈
+  const sharedExpenses = tripExpenses.filter(e => e.participants.length === 0);
+  const splitExpenses = tripExpenses.filter(e => e.participants.length > 0);
+  const sharedTotal = sharedExpenses.reduce((s,e) => s + e.krw, 0);
   const balances = MEMBERS.map(name => {
-    const paid = tripExpenses.filter(e => e.payer === name).reduce((s,e) => s + e.krw, 0);
-    const owed = tripExpenses.reduce((s,e) => {
+    const paid = splitExpenses.filter(e => e.payer === name).reduce((s,e) => s + e.krw, 0);
+    const owed = splitExpenses.reduce((s,e) => {
       if(!e.participants.includes(name) || e.participants.length === 0) return s;
       return s + e.krw / e.participants.length;
     }, 0);
@@ -1205,15 +1212,15 @@ function renderSettlementPanel(panel){
   summary.className = 'settle-summary';
   summary.innerHTML = `
     <div class="ss-card"><div class="ss-label">지금까지 쓴 총 금액</div><div class="ss-value">₩${Math.round(totalSpent).toLocaleString()}</div></div>
-    <div class="ss-card"><div class="ss-label">항목 수</div><div class="ss-value">${tripExpenses.length}건</div>${missingKrw ? `<div class="ss-label" style="margin:4px 0 0;color:var(--amber)">원화 미입력 ${missingKrw}건</div>` : ''}</div>
+    <div class="ss-card"><div class="ss-label">회비에서 돌려받을 금액</div><div class="ss-value">₩${Math.round(sharedTotal).toLocaleString()}</div><div class="ss-label" style="margin:4px 0 0">공동경비 ${sharedExpenses.length}건 · 전체 ${tripExpenses.length}건</div>${missingKrw ? `<div class="ss-label" style="margin:4px 0 0;color:var(--amber)">원화 미입력 ${missingKrw}건</div>` : ''}</div>
   `;
   panel.appendChild(summary);
 
-  if(tripExpenses.length > 0){
+  if(splitExpenses.length > 0){
     const balTitle = document.createElement('div');
     balTitle.className = 'bn-title';
     balTitle.style.margin = '0 4px 8px';
-    balTitle.textContent = '인당 정산 잔액 (+ 받을 돈 · − 보낼 돈)';
+    balTitle.textContent = '나눠 낸 항목 · 인당 정산 잔액 (+ 받을 돈 · − 보낼 돈)';
     panel.appendChild(balTitle);
 
     const balTable = document.createElement('div');
@@ -1271,7 +1278,7 @@ function renderSettlementPanel(panel){
         <div class="expense-row">
           <div class="expense-main">
             <div class="expense-memo">${e.memo || '(내용 없음)'}</div>
-            <div class="expense-sub">${e.payer} 결제 · ${participantsLabel} 분담 · ${dateLabel}</div>
+            <div class="expense-sub">${e.participants.length === 0 ? '공동경비 · 회비에서 정산' : e.payer + ' 결제 · ' + participantsLabel + ' 분담'} · ${dateLabel}</div>
           </div>
           <div style="text-align:right;">
             <div class="expense-amount">${e.krw ? '₩' + e.krw.toLocaleString() : '<span style="color:var(--muted)">원화 미입력</span>'}</div>
@@ -1310,6 +1317,7 @@ function openExpenseModal(id){
     document.getElementById('ef-amount').value = exp.amount || '';
     document.getElementById('ef-krw').value = exp.krw || '';
     pendingReceiptUrl = exp.receiptUrl || '';
+    document.getElementById('ef-split').checked = exp.participants.length > 0;
     document.getElementById('ef-memo').value = exp.memo;
     partWrap.querySelectorAll('input[type=checkbox]').forEach(cb => {
       cb.checked = exp.participants.includes(cb.value);
@@ -1324,8 +1332,10 @@ function openExpenseModal(id){
     try{ defPayer = localStorage.getItem('last_payer') || ''; }catch(e){}
     if(!MEMBERS.includes(defPayer)) defPayer = MEMBERS.find(n => n.includes('건우')) || MEMBERS[0];
     payerSel.value = defPayer;
+    document.getElementById('ef-split').checked = false;
     document.getElementById('ef-memo').value = '';
   }
+  applySplitUI();
   updateReceiptStatus();
   modal.classList.add('show');
 }
@@ -1339,10 +1349,11 @@ document.getElementById('expenseModalSave').addEventListener('click', async () =
   const krw = Math.round(Number(document.getElementById('ef-krw').value)) || 0;
   const amount = Math.round(Number(document.getElementById('ef-amount').value)) || 0;
   const memo = document.getElementById('ef-memo').value.trim();
-  const participants = [...document.querySelectorAll('#ef-participants input:checked')].map(cb => cb.value);
+  const split = document.getElementById('ef-split').checked;
+  const participants = split ? [...document.querySelectorAll('#ef-participants input:checked')].map(cb => cb.value) : [];
 
   if(krw <= 0 && amount <= 0){ alert('원화 금액(또는 엔화 금액)을 입력해주세요'); return; }
-  if(participants.length === 0){ alert('나눠 낸 사람을 1명 이상 선택해주세요'); return; }
+  if(split && participants.length === 0){ alert('나눠 낸 사람을 1명 이상 선택해주세요'); return; }
 
   const saveBtn = document.getElementById('expenseModalSave');
   saveBtn.disabled = true; saveBtn.textContent = '저장 중…';
@@ -2705,6 +2716,12 @@ function showUpdateBanner(reg){
   };
 }
 
+
+// ---- '나눠 낸 경우'를 켜면 낸 사람/나눈 사람 칸이 나타나요 ----
+function applySplitUI(){
+  document.getElementById('ef-split-wrap').style.display = document.getElementById('ef-split').checked ? 'block' : 'none';
+}
+document.getElementById('ef-split').addEventListener('change', applySplitUI);
 
 // ---- 영수증 사진 첨부 (증거용) ----
 function updateReceiptStatus(msg){
