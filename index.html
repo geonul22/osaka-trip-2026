@@ -577,6 +577,7 @@
 <div class="modal-overlay" id="photoPickerModal">
   <div class="modal-box">
     <h3>어느 일정에 사진을 추가할까요?</h3>
+    <label class="participant-check" style="margin:0 0 10px"><input type="checkbox" id="photoAlbumMode"> 앨범에서 고르기 (끄면 카메라가 바로 열려요)</label>
     <div id="photoPickerList"></div>
     <div class="modal-actions">
       <button type="button" id="photoPickerCancel">취소</button>
@@ -585,6 +586,7 @@
 </div>
 
 <input type="file" id="photoInput" accept="image/*" style="display:none">
+<input type="file" id="photoInputCam" accept="image/*" capture="environment" style="display:none">
 
 <div class="lightbox-overlay" id="lightbox">
   <div class="lightbox-box" id="lightboxBox">
@@ -1946,9 +1948,12 @@ async function downloadAllPhotos(photos, btn){
 let pendingUploadItemId = null;
 const photoInput = document.getElementById('photoInput');
 
-photoInput.addEventListener('change', async () => {
-  const file = photoInput.files[0];
-  photoInput.value = '';
+const photoInputCam = document.getElementById('photoInputCam');
+photoInput.addEventListener('change', () => handlePhotoPick(photoInput));
+photoInputCam.addEventListener('change', () => handlePhotoPick(photoInputCam));
+async function handlePhotoPick(input){
+  const file = input.files[0];
+  input.value = '';
   if(!file || !pendingUploadItemId) return;
   const itemId = pendingUploadItemId;
   const fab = document.getElementById('photoFab');
@@ -1964,7 +1969,7 @@ photoInput.addEventListener('change', async () => {
     fab.disabled = false;
     pendingUploadItemId = null;
   }
-});
+}
 
 // ---------------------------------------------------------------
 // Photo FAB: pick which item, then open the camera/file picker
@@ -1979,7 +1984,13 @@ document.getElementById('photoFab').addEventListener('click', () => {
     ? items.map(it => `<button type="button" class="picker-row" data-id="${it.id}"><span class="ptime">${it.time}</span><span class="pname">${it.name}</span></button>`).join('')
     : `<div class="picker-empty">이 날짜엔 아직 일정이 없어요</div>`;
 
+  let album = false;
+  try{ album = localStorage.getItem('photo_album_mode') === '1'; }catch(e){}
+  document.getElementById('photoAlbumMode').checked = album;
   document.getElementById('photoPickerModal').classList.add('show');
+});
+document.getElementById('photoAlbumMode').addEventListener('change', (e) => {
+  try{ localStorage.setItem('photo_album_mode', e.target.checked ? '1' : '0'); }catch(err){}
 });
 
 document.getElementById('photoPickerCancel').addEventListener('click', () => {
@@ -1991,7 +2002,7 @@ document.getElementById('photoPickerList').addEventListener('click', (e) => {
   if(!row) return;
   pendingUploadItemId = row.dataset.id;
   document.getElementById('photoPickerModal').classList.remove('show');
-  photoInput.click();
+  (document.getElementById('photoAlbumMode').checked ? photoInput : photoInputCam).click();
 });
 
 document.addEventListener('click', (e) => {
