@@ -109,6 +109,13 @@ a { color: var(--link); }
 .mt:hover { background: #fff; }
 .mt.on { background: var(--ink); color: #fff; }
 .lbl.me { pointer-events: none; }
+/* 앱에서 ?day= 로 열면: 일정 패널 없이 지도만 크게 */
+.maponly, .maponly body { height: 100%; overflow: hidden; }
+.maponly .top, .maponly .panel { display: none; }
+.maponly #app { height: 100svh; min-height: 0; }
+.maponly .stage { display: block; position: relative; }
+.maponly .mapwrap { position: absolute; inset: 0; height: auto; min-height: 0; }
+.maponly .map-tools { top: calc(10px + env(safe-area-inset-top, 0px)); }
 .me-dot { display: block; width: 18px; height: 18px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff; box-shadow: 0 0 0 7px rgba(26,115,232,.28), 0 2px 8px rgba(0,0,0,.4); }
 .tod { display: flex; align-items: center; gap: 8px; }
 .tod output { font: 700 12.5px/1 var(--f-num); min-width: 38px; font-variant-numeric: tabular-nums; }
@@ -2142,6 +2149,7 @@ function selectItem(di, i, { fly = true, fromList = false } = {}) {
     row.classList.add('flash');
   }
   const it = DAYS[di].items[i];
+  if (document.documentElement.classList.contains('maponly')) toast(`${it.time} · ${it.name}`);
   if (fromList && isPhone()) {
     const r = map.host.getBoundingClientRect();
     if (r.bottom < 120) map.host.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2626,6 +2634,7 @@ async function boot() {
     state.day = +qd - 1;
     state.tab = 'plan';
     explicitDay = true;
+    document.documentElement.classList.add('maponly');
   }
   map.dayIndex = state.day;
   renderHeader();
