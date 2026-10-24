@@ -549,6 +549,21 @@
       "price": 3000,
       "priceLabel": null,
       "id": "i_a9788e50"
+    },
+    {
+      "day": "Day1 · 11/13(금)",
+      "time": "21:00",
+      "type": "술집(1차)",
+      "priority": "대안",
+      "name": "숙소에서 편의점 안주 + 술",
+      "addr": "숙소(고즈) 근처 편의점",
+      "memo": "가장 피곤할 때 추천. 숙소 근처 편의점에서 맥주·하이볼·안주를 사서 숙소에서 편하게 마시기 (예약·웨이팅 없음, 1인 약 1,500엔 예상)",
+      "map": "https://www.google.com/maps/search/?api=1&query=%ED%8E%B8%EC%9D%98%EC%A0%90%20Kozu%20Chuo%20Ward%20Osaka",
+      "dir": "https://www.google.com/maps/dir/?api=1&destination=%ED%8E%B8%EC%9D%98%EC%A0%90%20Kozu%20Chuo%20Ward%20Osaka",
+      "home": "",
+      "price": 1500,
+      "priceLabel": null,
+      "id": "i_0818b6d7"
     }
   ],
   "budget": {
