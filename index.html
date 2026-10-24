@@ -841,6 +841,14 @@ function renderAll(){
     meta.innerHTML = `<b>${date || ''}</b><span>일정 ${items.length}건</span>`;
     panel.appendChild(meta);
 
+    // 3D 지도(osaka-3d.html)에서 그날 이동경로를 바로 열어 주는 버튼 (1~3일차)
+    if(i < 3){
+      const go3d = document.createElement('div');
+      go3d.style.cssText = 'margin:-6px 4px 16px;';
+      go3d.innerHTML = `<a class="lnk primary" href="osaka-3d.html?day=${i + 1}">🧭 3D 지도로 이동경로 보기</a>`;
+      panel.appendChild(go3d);
+    }
+
     const tl = document.createElement('div');
     tl.className = 'timeline';
 
